@@ -1,13 +1,13 @@
-#' @title Fit a BART model
-#' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
+#' @title Rotation BART for regression
+#' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'
+#' @param srpk the number of cols of sparse projection matrix
 #' @export
 
-
-BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
-               k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
-               power=2.0, base=.95,w=rep(1,length(y)),
-               ntree=50,ndpost=700,nskip=300,Tmin=5,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-               save_trees=F,rule='bart'){
+RotBART=function(X,y,x.test,sigdf=3, sigquant=.90,
+                 k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
+                 power=2.0, base=.95,
+                 ntree=50,ndpost=700,nskip=300,Tmin=5,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
+                 save_trees=F,rotate = 'rr',srpk=2*ncol(X)){
 
   n=nrow(X)
   p=ncol(X)
@@ -48,11 +48,12 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
            t_pos=1,t_data=list(1:n),t_depth=0)
   })
 
-  #statistics to save
-  tree_history=list()#a list of ndpost lists and each of ndpost lists is a list of ntree lists.
+  #a list of ndpost lists and each of ndpost lists is a list of ntree lists.
+  tree_history=list()
 
+  #record proposal acceptance number
   tree_proposal_total=matrix(rep(0,ntree*length(p_modify)),nrow = ntree,ncol = length(p_modify))
-  tree_proposal_accept=matrix(rep(0,ntree*length(p_modify)),nrow=ntree,ncol=length(p_modify))#record proposal acceptance number
+  tree_proposal_accept=matrix(rep(0,ntree*length(p_modify)),nrow=ntree,ncol=length(p_modify))
 
   total_iter=nskip+ndpost
 
@@ -64,6 +65,32 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
 
   yhat.train.j=matrix(rnorm(ntree*n,0,sqrt(1/(n/sigest^2+1/tau^2))),nrow=ntree,ncol=n)
   yhat.test.j=matrix(rep(0,ntree*nt),nrow=ntree,ncol=nt)
+
+  #rotate each data set
+  if(rotate=='rr'){
+    RotationMat = Gen_R(p,ntree)
+    x.train.r=array(NA,dim=c(n,p,ntree))
+    x.train.r[]=apply(RotationMat, 3, function(r){X%*%r})
+    x.test.r=array(NA,dim=c(nt,p,ntree))
+    x.test.r[]=apply(RotationMat,3,function(r){x.test%*%r})
+  }
+  if(rotate=='rraug'){
+    RotationMat = Gen_R(p,ntree)
+    x.train.r=array(NA,dim=c(n,2*p,ntree))
+    x.test.r=array(NA,dim=c(nt,2*p,ntree))
+    x.train.r[]=apply(RotationMat, 3, function(r){cbind(X,X%*%r)})
+    x.test.r[]=apply(RotationMat,3,function(r){cbind(x.test,x.test%*%r)})
+  }
+  if(rotate=='srp'){
+    RotationMat = Gen_SRP(p,srpk,ntree)
+    x.train.r=array(NA,dim=c(n,srpk,ntree))
+    x.test.r=array(NA,dim=c(nt,srpk,ntree))
+    x.train.r[]=apply(RotationMat, 3, function(r){X%*%r})
+    x.test.r[]=apply(RotationMat,3,function(r){x.test%*%r})
+  }
+
+  X = x.train.r
+  x.test = x.test.r
 
   for (i in 1:(total_iter)) {
     if(i%%printevery==0){print(sprintf("done %d (out of %d)",i,total_iter))};
@@ -80,7 +107,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
       tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
       if(move==1){
         #grow
-        grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
+        grown_tree=grow_tree(treelist[[j]],X[,,j],Rj,Tmin)
         new_treej=grown_tree$btree_obj
         #calculate acceptance probablity
         lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
@@ -107,7 +134,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
 
       }else{
         # change(simple)
-        changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
+        changed_tree=change_tree(treelist[[j]],X[,,j],Rj,Tmin)
         new_treej = changed_tree$btree_obj
         lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
                         - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
@@ -131,9 +158,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
         #accept=accept+1
         tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
         treelist[[j]]=new_treej
-        #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
-        hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
+        hat=yhat.draw(new_treej,x.test[,,j],Rj,tau,sigma_draw[i]^2)
         yhat.train.j[j,] = hat$yhat
         yhat.test.j[j,] = hat$ypred
 

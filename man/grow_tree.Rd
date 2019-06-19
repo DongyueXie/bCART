@@ -2,13 +2,10 @@
 % Please edit documentation in R/grow.R
 \name{grow_tree}
 \alias{grow_tree}
-\title{Grow tree proposal in bCART}
+\title{Grow tree proposal}
 \usage{
-grow_tree(btree_obj, X, Rj, Tmin)
-}
-\arguments{
-\item{Rj}{response}
+grow_tree(btree_obj, X, Rj, Tmin, rule)
 }
 \description{
-Grow tree proposal in bCART
+Grow tree proposal
 }

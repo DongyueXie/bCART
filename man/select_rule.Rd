@@ -2,10 +2,10 @@
 % Please edit documentation in R/select_rule.R
 \name{select_rule}
 \alias{select_rule}
-\title{Select splitting vairable and value}
+\title{select splitting variable and value}
 \usage{
-select_rule(X, y, Tmin)
+select_rule(X, y, Tmin, rule)
 }
 \description{
-Select splitting vairable and value
+select splitting variable and value
 }

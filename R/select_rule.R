@@ -1,9 +1,34 @@
-#' @title Select splitting vairable and value
+#' @title select splitting variable and value
 #' @export
 
-select_rule=function(X,y,Tmin){
+select_rule=function(X,y,Tmin,rule){
   p_var=ncol(X)
-  v=rmultinom(1,1,rep(1/p_var,p_var))
+
+  if(missing(rule)){
+    rule='bart'
+  }
+  if(rule=='bart'){
+    v=rmultinom(1,1,rep(1/p_var,p_var))
+  }
+  if(rule=='grp'){
+    v = rnorm(p_var)
+    v = v/sqrt(sum(v^2))
+  }
+  if(rule=='sgrp'){
+    a = 1
+    b = p_var
+    gama=0
+    while(sum(gama)==0){
+      pp=rbeta(1,a,b)
+      gama = rbinom(p_var,1,pp)
+    }
+    v = rnorm(p_var)*gama
+    v = v/sqrt(sum(v^2))
+  }
+  if(rule=='hyperplane'){
+    v.idx=sample(1:nrow(X),2)
+    v=X[v.idx[1],]-X[v.idx[2],]
+  }
   proj=X%*%v
   n_rule=length(proj)
   if(n_rule>=Tmin*2){

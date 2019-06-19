@@ -1,7 +1,7 @@
 #' @title Summary pBART fit
 #' @export
 
-summary.pbartr = function(lbart.obj,y,y.test){
+summary_pbartr = function(lbart.obj,y,y.test){
   fit = lbart.obj
   message(sprintf('Training accuracy %.3f',accuracy(fit$yhat,y)))
   message(sprintf('Training AUC %.3f',AUC(fit$yhat,y)))

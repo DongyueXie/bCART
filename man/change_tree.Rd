@@ -2,10 +2,10 @@
 % Please edit documentation in R/change.R
 \name{change_tree}
 \alias{change_tree}
-\title{Change proposal in Bcart}
+\title{Change proposal}
 \usage{
-change_tree(btree_obj, X, Rj, Tmin)
+change_tree(btree_obj, X, Rj, Tmin, rule)
 }
 \description{
-Change proposal in Bcart
+Change proposal
 }

@@ -1,8 +1,7 @@
-#' @title Change proposal in Bcart
+#' @title Change proposal
 #' @export
-#'
 
-change_tree=function(btree_obj,X,Rj,Tmin){
+change_tree=function(btree_obj,X,Rj,Tmin,rule){
 
   parent_pos<-floor(btree_obj$t_pos/2)
   parent_freq<-data.frame(table(parent_pos))
@@ -22,7 +21,7 @@ change_tree=function(btree_obj,X,Rj,Tmin){
   X_sub=X[sub_data,]
   Rj_sub=Rj[sub_data]
   s_change_dir = btree_obj$s_dir[,s_change]
-  after_select<-select_rule(X_sub,Rj_sub,Tmin)
+  after_select<-select_rule(X_sub,Rj_sub,Tmin,rule)
   dir_new<-after_select$dir_new
   #proj=after_select$proj
   rule_new<-after_select$rule_new

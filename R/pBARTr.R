@@ -1,11 +1,12 @@
 #' @title Classification BART
+#' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
 #' @export
 
 pBARTr=function(X,y,x.test,cutoff=0.5,
                 k=2.0, binaryOffset=NULL,
                 power=2.0, base=.95,w=rep(1,length(y)),
                 ntree=50,ndpost=700,nskip=300,Tmin=5,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-                save_trees=F){
+                save_trees=F,rule='bart'){
 
   n=nrow(X)
   p=ncol(X)
@@ -65,7 +66,7 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
       tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
       if(move==1){
         #grow
-        grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin)
+        grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
         new_treej=grown_tree$btree_obj
         #calculate acceptance probablity
         lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,1,tau)
@@ -92,7 +93,7 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
 
       }else{
         # change(simple)
-        changed_tree=change_tree(treelist[[j]],X,Rj,Tmin)
+        changed_tree=change_tree_simple(treelist[[j]],X,Rj,Tmin,rule)
         new_treej = changed_tree$btree_obj
         lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
                         - log_lik(changed_tree$t_data_old,Rj,Tmin,1,tau))

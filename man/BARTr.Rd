@@ -5,9 +5,13 @@
 \title{Fit a BART model}
 \usage{
 BARTr(X, y, x.test, sigdf = 3, sigquant = 0.9, k = 2, lambda = NA,
-  sigest = NA, sigmaf = NA, power = 2, base = 0.95, ntree = 50,
-  ndpost = 700, nskip = 300, Tmin = 5, printevery = 100,
-  p_modify = c(2.5, 2.5, 4)/9, save_trees = F)
+  sigest = NA, sigmaf = NA, power = 2, base = 0.95, w = rep(1,
+  length(y)), ntree = 50, ndpost = 700, nskip = 300, Tmin = 5,
+  printevery = 100, p_modify = c(2.5, 2.5, 4)/9, save_trees = F,
+  rule = "bart")
+}
+\arguments{
+\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart}
 }
 \description{
 Fit a BART model

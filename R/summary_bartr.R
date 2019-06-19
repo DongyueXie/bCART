@@ -2,7 +2,7 @@
 #' @export
 
 
-summary.bartr = function(lbart.obj,y,Ey,Ey.test){
+summary_bartr = function(lbart.obj,y,Ey,Ey.test){
   fit = lbart.obj
   message(sprintf('Training error %.3f',rmse(fit$yhat.train.mean,y)))
   message(sprintf('In-sample estimaiton error %.3f',rmse(fit$yhat.train.mean,Ey)))

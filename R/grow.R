@@ -1,8 +1,8 @@
-#' @title Grow tree proposal in bCART
-#' @param Rj response
+#' @title Grow tree proposal
 #' @export
 
-grow_tree=function(btree_obj,X,Rj,Tmin){
+
+grow_tree=function(btree_obj,X,Rj,Tmin,rule){
 
   # find the split node, var and rule
   # We only want to find large terminal node(more than Tmin samples)
@@ -20,7 +20,7 @@ grow_tree=function(btree_obj,X,Rj,Tmin){
   sub_data<-btree_obj$t_data[[s_new]]
   X_sub=X[sub_data,]
   Rj_sub=Rj[sub_data]
-  after_select<-select_rule(X_sub,Rj_sub,Tmin)
+  after_select<-select_rule(X_sub,Rj_sub,Tmin,rule)
   dir_new<-after_select$dir_new
   #proj=after_select$proj
   rule_new<-after_select$rule_new
