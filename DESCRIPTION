@@ -10,3 +10,4 @@ Encoding: UTF-8
 LazyData: true
 Imports: 
   BART,rpart,glmnet,SSLASSO,mvtnorm,MASS,pROC
+RoxygenNote: 6.1.0
