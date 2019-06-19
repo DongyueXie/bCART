@@ -11,7 +11,7 @@ BARTr(X, y, x.test, sigdf = 3, sigquant = 0.9, k = 2, lambda = NA,
   rule = "bart")
 }
 \arguments{
-\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart}
+\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
 }
 \description{
 Fit a BART model

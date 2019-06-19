@@ -10,7 +10,7 @@ pBARTr(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
   p_modify = c(2.5, 2.5, 4)/9, save_trees = F, rule = "bart")
 }
 \arguments{
-\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart}
+\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
 }
 \description{
 Classification BART
