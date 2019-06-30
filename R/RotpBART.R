@@ -152,7 +152,7 @@ RotpBART=function(X,y,x.test,cutoff=0.5,
         yhat.test.j[j,] = hat$ypred
 
       }else{
-        hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
+        hat=yhat.draw(treelist[[j]],x.test[,,j],Rj,tau,1)
         yhat.train.j[j,] = hat$yhat
         yhat.test.j[j,] = hat$ypred
       }
