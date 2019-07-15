@@ -65,10 +65,15 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
   yhat.train.j=matrix(rnorm(ntree*n,0,sqrt(1/(n/sigest^2+1/tau^2))),nrow=ntree,ncol=n)
   yhat.test.j=matrix(rep(0,ntree*nt),nrow=ntree,ncol=nt)
 
+  #####run bart for 100 iters then switch to 'rule'
+  split_rule = rule
+  #####
+
   for (i in 1:(total_iter)) {
     if(i%%printevery==0){print(sprintf("done %d (out of %d)",i,total_iter))};
     if(save_trees){tree_history[[i]]=treelist}
     #propose modification to each tree
+
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
 
@@ -80,6 +85,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
       tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
       if(move==1){
         #grow
+
         grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
         new_treej=grown_tree$btree_obj
         #calculate acceptance probablity
@@ -133,14 +139,26 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
         treelist[[j]]=new_treej
         #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
         #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
-        hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        if(i<=nskip){
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
+
 
       }else{
-        hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        if(i<=nskip){
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
+
       }
 
 

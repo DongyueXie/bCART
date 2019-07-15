@@ -4,7 +4,7 @@
 \alias{yhat.draw}
 \title{Draw of y}
 \usage{
-yhat.draw(btree_obj, x.test, Rj, tau, sigma2)
+yhat.draw(btree_obj, x.test, Rj, tau, sigma2, draw.test = T)
 }
 \value{
 Draws of yhat and ypred

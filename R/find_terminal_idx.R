@@ -14,7 +14,7 @@ find_terminal_idx<-function(X_test,btree_obj){
     }
     split_rule=btree_obj$s_rule[split_idx]
 
-    if(split_proj<split_rule){
+    if(split_proj<=split_rule){
       flag_pos=flag_pos*2
     }else{
       flag_pos=flag_pos*2+1
