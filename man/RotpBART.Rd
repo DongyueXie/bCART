@@ -6,7 +6,7 @@
 \usage{
 RotpBART(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
   power = 2, base = 0.95, w = rep(1, length(y)), ntree = 50,
-  ndpost = 700, nskip = 300, Tmin = 5, printevery = 100,
+  ndpost = 700, nskip = 300, Tmin = 2, printevery = 100,
   p_modify = c(2.5, 2.5, 4)/9, save_trees = F, rotate = "rr",
   srpk = 2 * ncol(X))
 }

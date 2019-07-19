@@ -6,7 +6,7 @@
 RotBART=function(X,y,x.test,sigdf=3, sigquant=.90,
                  k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
                  power=2.0, base=.95,
-                 ntree=50,ndpost=700,nskip=300,Tmin=5,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
+                 ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
                  save_trees=F,rotate = 'rr',srpk=2*ncol(X)){
 
   n=nrow(X)
@@ -158,14 +158,27 @@ RotBART=function(X,y,x.test,sigdf=3, sigquant=.90,
         #accept=accept+1
         tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
         treelist[[j]]=new_treej
-        hat=yhat.draw(new_treej,x.test[,,j],Rj,tau,sigma_draw[i]^2)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
+        #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
+        if(i<=nskip){
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
+
 
       }else{
-        hat=yhat.draw(treelist[[j]],x.test[,,j],Rj,tau,sigma_draw[i]^2)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        if(i<=nskip){
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
       }
 
 
