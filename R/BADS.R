@@ -6,7 +6,7 @@
 BADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
                lambda=NA, sigest=NA,sigmaf=NA,
                ntree=50,ndpost=200,nskip=100,Tmin=2,printevery=100,
-               save_trees=F,rule='bart'){
+               save_trees=F,rule='bart',pre_train=T){
 
   n=nrow(X)
   p=ncol(X)
@@ -71,11 +71,19 @@ BADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
     yhat.train.j[j,] = hat$yhat
   }
 
+  #####run bart for 100 iters then switch to 'rule'
+  split_rule = rule
+  #####
 
   for (i in 1:(total_iter)) {
     if(i%%printevery==0){print(sprintf("done %d (out of %d)",i,total_iter))};
     if(save_trees){tree_history[[i]]=treelist}
     #propose modification to each tree
+
+    if(pre_train){
+      if(i<=100){rule = 'bart'}else{rule = split_rule}
+    }
+
 
     if(i<=nskip){
 

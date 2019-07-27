@@ -7,7 +7,7 @@
 BADS(X, y, x.test, sigdf = 3, sigquant = 0.9, k = 2, lambda = NA,
   sigest = NA, sigmaf = NA, ntree = 50, ndpost = 200,
   nskip = 100, Tmin = 2, printevery = 100, save_trees = F,
-  rule = "bart")
+  rule = "bart", pre_train = T)
 }
 \arguments{
 \item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}

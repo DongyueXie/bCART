@@ -95,7 +95,7 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
 
         t2 = Sys.time()
 
-        print(paste('Grow tree takes', t2-t1,'second'))
+        #print(paste('Grow tree takes', t2-t1,'second'))
 
         new_treej=grown_tree$btree_obj
         #calculate acceptance probablity
@@ -104,12 +104,12 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
                         - log_lik(grown_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
         t2 = Sys.time()
 
-        print(paste('Evaluate likelihood after grow takes', t2-t1,'second'))
+        #print(paste('Evaluate likelihood after grow takes', t2-t1,'second'))
 
         t1 = Sys.time()
         trans_ratio=p_modify[2]/p_modify[1]*length(treelist[[j]]$t_pos)/w2(new_treej)
         t2 = Sys.time()
-        print(paste('Evaluate trans ratio takes', t2-t1,'second'))
+        #print(paste('Evaluate trans ratio takes', t2-t1,'second'))
         #use new p_split
         #prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
         prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
@@ -122,7 +122,7 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
         pruned_tree=prune_tree(treelist[[j]])
         t2 = Sys.time()
 
-        print(paste('Prune tree takes', t2-t1,'second'))
+        #print(paste('Prune tree takes', t2-t1,'second'))
 
         new_treej=pruned_tree$btree_obj
 
@@ -130,12 +130,12 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
         lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
                         - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
         t2=Sys.time()
-        print(paste('Evaluate likelihood after prune takes', t2-t1,'second'))
+        #print(paste('Evaluate likelihood after prune takes', t2-t1,'second'))
 
         t1 = Sys.time()
         trans_ratio=p_modify[1]/p_modify[2]*w2(new_treej)/(length(new_treej$t_pos))
         t2=Sys.time()
-        print(paste('Evaluate trans ratio takes', t2-t1,'second'))
+        #print(paste('Evaluate trans ratio takes', t2-t1,'second'))
 
         prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
         #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
@@ -146,7 +146,7 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
         t1 = Sys.time()
         changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
         t2 = Sys.time()
-        print(paste('Change tree takes', t2-t1,'second'))
+        #print(paste('Change tree takes', t2-t1,'second'))
 
         new_treej = changed_tree$btree_obj
 
@@ -154,7 +154,7 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
         lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
                         - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
         t2 = Sys.time()
-        print(paste('Evaluate likelihood after change takes', t2-t1,'second'))
+        #print(paste('Evaluate likelihood after change takes', t2-t1,'second'))
 
 
         alpha = lik_ratio
@@ -184,18 +184,29 @@ BARTr_dev=function(X,y,x.test,sigdf=3, sigquant=.90,
         treelist[[j]]=new_treej
         #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
         #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
-        hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        if(i<=nskip){
+          hat=yhat.draw(new_treej,x.test,Rj,tau,1,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(new_treej,x.test,Rj,tau,1)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
+
 
       }else{
-        hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
-        yhat.train.j[j,] = hat$yhat
-        yhat.test.j[j,] = hat$ypred
+        if(i<=nskip){
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1,draw.test=F)
+          yhat.train.j[j,] = hat$yhat
+        }else{
+          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
+          yhat.train.j[j,] = hat$yhat
+          yhat.test.j[j,] = hat$ypred
+        }
       }
 
       t2 = Sys.time()
-      print(paste('Draw yhat and ypred takes', t2-t1,'second'))
+      #print(paste('Draw yhat and ypred takes', t2-t1,'second'))
 
 
     }

@@ -7,7 +7,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
                k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
                power=2.0, base=.95,w=rep(1,length(y)),
                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-               save_trees=F,rule='bart'){
+               save_trees=F,rule='bart',pre_train=T){
 
   n=nrow(X)
   p=ncol(X)
@@ -65,11 +65,18 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
   yhat.train.j=matrix(rnorm(ntree*n,0,sqrt(1/(n/sigest^2+1/tau^2))),nrow=ntree,ncol=n)
   yhat.test.j=matrix(rep(0,ntree*nt),nrow=ntree,ncol=nt)
 
+  #####run bart for 100 iters then switch to 'rule'
+  split_rule = rule
+  #####
 
   for (i in 1:(total_iter)) {
     if(i%%printevery==0){print(sprintf("done %d (out of %d)",i,total_iter))};
     if(save_trees){tree_history[[i]]=treelist}
     #propose modification to each tree
+
+    if(pre_train){
+      if(i<=100){rule = 'bart'}else{rule = split_rule}
+    }
 
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])

@@ -2,10 +2,9 @@
 #' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
 #' @export
 
-pBARTr=function(X,y,x.test,cutoff=0.5,
+pBADS=function(X,y,x.test,cutoff=0.5,
                 k=2.0, binaryOffset=NULL,
-                power=2.0, base=.95,w=rep(1,length(y)),
-                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
+                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,
                 save_trees=F,rule='bart',pre_train=T){
 
   n=nrow(X)
@@ -29,9 +28,6 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
   #statistics to save
   tree_history=list()#a list of ndpost lists and each of ndpost lists is a list of ntree lists.
 
-  tree_proposal_total=matrix(rep(0,ntree*length(p_modify)),nrow = ntree,ncol = length(p_modify))
-  tree_proposal_accept=matrix(rep(0,ntree*length(p_modify)),nrow=ntree,ncol=length(p_modify))#record proposal acceptance number
-
   total_iter=nskip+ndpost
 
   yhat.train=matrix(nrow=ndpost,ncol=n)
@@ -40,6 +36,27 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
 
   yhat.train.j=matrix(rnorm(ntree*n,0,sqrt(1/(n+1/tau^2))),nrow=ntree,ncol=n)
   yhat.test.j=matrix(rep(0,ntree*nt),nrow=ntree,ncol=nt)
+
+  # initialize decision stumps
+
+  bm.f = colSums(yhat.train.j)
+  y.train = c()
+  for(ni in 1:n){
+    if(y[ni]==1){
+      y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
+    }else{
+      y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
+    }
+  }
+
+  for(j in 1:ntree){
+    Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
+    grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
+    new_treej=grown_tree$btree_obj
+    treelist[[j]]=new_treej
+    hat=yhat.draw(new_treej,x.test,Rj,tau,1,draw.test=F)
+    yhat.train.j[j,] = hat$yhat
+  }
 
   #####run bart for 100 iters then switch to 'rule'
   split_rule = rule
@@ -66,64 +83,20 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
 
-      # propose a modification
-      move=which(rmultinom(1,1,p_modify)==1)
-
-      # when we have no split node, only grow tree
-      if(length(treelist[[j]]$s_pos)<1){move=1}
-      tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
-      if(move==1){
-        #grow
-        grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
-        new_treej=grown_tree$btree_obj
-        #calculate acceptance probablity
-        lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,1,tau)
-                        - log_lik(grown_tree$t_data_old,Rj,Tmin,1,tau))
-        trans_ratio=p_modify[2]/p_modify[1]*length(treelist[[j]]$t_pos)/w2(new_treej)
-        #use new p_split
-        #prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
-        prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
-        alpha=lik_ratio*trans_ratio*prior_ratio
-        #print(sprintf('lik_ratio %.3f,trans_ratio %.3f,prior.ratio %.3f,alpha %.3f',lik_ratio,trans_ratio,prior_ratio,alpha))
-        #print(sprintf('loglik_new %.3f, old %.3f',log_lik(grown_tree$t_data_new,X,Rj,Tmin,sigma_draw[i]^2,V),log_lik(grown_tree$t_data_old,X,Rj,Tmin,sigma_draw[i]^2,V)))
-      }else if(move==2){
-        #prune
-        pruned_tree=prune_tree(treelist[[j]])
-        new_treej=pruned_tree$btree_obj
-
-        lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,1,tau)
-                        - log_lik(pruned_tree$t_data_old,Rj,Tmin,1,tau))
-
-        trans_ratio=p_modify[1]/p_modify[2]*w2(new_treej)/(length(new_treej$t_pos))
-        prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
-        #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
-        alpha=lik_ratio*trans_ratio*prior_ratio
-
-      }else{
-        # change(simple)
-        changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
-        new_treej = changed_tree$btree_obj
-        lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
+      changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
+      new_treej = changed_tree$btree_obj
+      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
                         - log_lik(changed_tree$t_data_old,Rj,Tmin,1,tau))
-        alpha = lik_ratio
-      }
+      alpha = lik_ratio
+
 
       A=runif(1)
 
       if(is.nan(alpha)){
         alpha=0
       }
-      #if a tree has a leaf node with no obs, discard it.
-      #this can happen
-      if((0%in%as.numeric(unlist(lapply(new_treej$t_data, length))))){
-        alpha=0
-      }
-      #
-      #
+
       if(A<alpha){
-        # we accept the new tree
-        #accept=accept+1
-        tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
         treelist[[j]]=new_treej
         #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
         #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
@@ -178,6 +151,5 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
               phat.train.mean=phat.train.mean,
               phat.test.mean=phat.test.mean,
               tree_history=tree_history,
-              tree_proposal_total=tree_proposal_total,tree_proposal_accept=tree_proposal_accept,
               tree_leaf_count=tree_leaf_count))
 }
