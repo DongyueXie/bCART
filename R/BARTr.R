@@ -7,7 +7,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
                k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
                power=2.0, base=.95,w=rep(1,length(y)),
                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-               save_trees=F,rule='bart',pre_train=T){
+               save_trees=F,rule='bart',pre_train=T,n_pre_train=100){
 
   n=nrow(X)
   p=ncol(X)
@@ -43,16 +43,28 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
   #a list of ntree empty lists(trees).
   treelist=vector(ntree,mode='list')
   #give each tree a list speicifying the parameters
+  # s_pos: internal node index
+  # s_dir: internal node projection
+  # s_rule: internal node splitting value
+  # s_data: internal node data point index
+  # s_depth: internal node depth
+  # s_obs: internal node number of observations
+  # t_pos: leaf nodei index
+  # t_data: terminal node data point index
+  # t_depth: terminal node depth
+  # t_test_data: terminal node testing data point index
   treelist=lapply(treelist, function(x){
     x=list(s_pos=NULL,s_dir=NULL,s_rule=NULL,s_data=NULL,s_depth=NULL,s_obs=NULL,
-           t_pos=1,t_data=list(1:n),t_depth=0)
+           t_pos=1,t_data=list(1:n),t_depth=0,t_test_data=NULL)
   })
 
   #statistics to save
   tree_history=list()#a list of ndpost lists and each of ndpost lists is a list of ntree lists.
 
-  tree_proposal_total=matrix(rep(0,ntree*length(p_modify)),nrow = ntree,ncol = length(p_modify))
-  tree_proposal_accept=matrix(rep(0,ntree*length(p_modify)),nrow=ntree,ncol=length(p_modify))#record proposal acceptance number
+  n_move = length(p_modify)
+
+  tree_proposal_total=matrix(rep(0,ntree*n_move),nrow = ntree,ncol = n_move)
+  tree_proposal_accept=matrix(rep(0,ntree*n_move),nrow=ntree,ncol=n_move)
 
   total_iter=nskip+ndpost
 
@@ -75,54 +87,21 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
     #propose modification to each tree
 
     if(pre_train){
-      if(i<=100){rule = 'bart'}else{rule = split_rule}
+      if(i<=n_pre_train){rule = 'bart'}else{rule = split_rule}
     }
 
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
+      sig2 = sigma_draw[i]^2
 
-      # propose a modification
-      move=which(rmultinom(1,1,p_modify)==1)
+      BART_draw = BARTr_train(X,Rj,treelist[[j]],p_modify,Tmin,
+                              rule,sig2,tau,base,power)
 
-      # when we have no split node, only grow tree
-      if(length(treelist[[j]]$s_pos)<1){move=1}
+      alpha = BART_draw$alpha
+      new_treej = BART_draw$new_treej
+      move = BART_draw$move
+
       tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
-      if(move==1){
-        #grow
-
-        grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
-        new_treej=grown_tree$btree_obj
-        #calculate acceptance probablity
-        lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
-                        - log_lik(grown_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
-        trans_ratio=p_modify[2]/p_modify[1]*length(treelist[[j]]$t_pos)/w2(new_treej)
-        #use new p_split
-        #prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
-        prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
-        alpha=lik_ratio*trans_ratio*prior_ratio
-        #print(sprintf('lik_ratio %.3f,trans_ratio %.3f,prior.ratio %.3f,alpha %.3f',lik_ratio,trans_ratio,prior_ratio,alpha))
-        #print(sprintf('loglik_new %.3f, old %.3f',log_lik(grown_tree$t_data_new,X,Rj,Tmin,sigma_draw[i]^2,V),log_lik(grown_tree$t_data_old,X,Rj,Tmin,sigma_draw[i]^2,V)))
-      }else if(move==2){
-        #prune
-        pruned_tree=prune_tree(treelist[[j]])
-        new_treej=pruned_tree$btree_obj
-
-        lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
-                        - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
-
-        trans_ratio=p_modify[1]/p_modify[2]*w2(new_treej)/(length(new_treej$t_pos))
-        prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
-        #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
-        alpha=lik_ratio*trans_ratio*prior_ratio
-
-      }else{
-        # change(simple)
-        changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
-        new_treej = changed_tree$btree_obj
-        lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
-                        - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
-        alpha = lik_ratio
-      }
 
       A=runif(1)
 
@@ -131,34 +110,34 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
       }
       #if a tree has a leaf node with no obs, discard it.
       #this can happen
-      if((0%in%as.numeric(unlist(lapply(new_treej$t_data, length))))){
-        alpha=0
-      }
+      #if((0%in%as.numeric(unlist(lapply(new_treej$t_data, length))))){
+      #  alpha=0
+      #}
       #
       #
       if(A<alpha){
         # we accept the new tree
-        #accept=accept+1
         tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
-        treelist[[j]]=new_treej
-        #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
+
         if(i<=nskip){
-          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(new_treej,Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
+          new_treej$t_test_data = hat$t_idx
         }
+
+        treelist[[j]]=new_treej
 
 
       }else{
         if(i<=nskip){
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,sigma_draw[i]^2)
+          hat=yhat.draw2(treelist[[j]],x.test,Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }
@@ -170,7 +149,6 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
     if(i>nskip){
       yhat.train[i-nskip,]=colSums(yhat.train.j)
       yhat.test[i-nskip,]=colSums(yhat.test.j)
-      #draw sigma
       res=y.train-yhat.train[i-nskip,]
     }else{
       res=y.train-colSums(yhat.train.j)

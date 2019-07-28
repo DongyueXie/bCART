@@ -2,13 +2,13 @@
 % Please edit documentation in R/yhat_draw.R
 \name{yhat.draw}
 \alias{yhat.draw}
-\title{Draw of y}
+\title{Draw of y when accept tree movement}
 \usage{
-yhat.draw(btree_obj, x.test, Rj, tau, sigma2, draw.test = T)
+yhat.draw(btree_obj, x.test, Rj, tau, sigma2)
 }
 \value{
 Draws of yhat and ypred
 }
 \description{
-Draw of y
+Draw of y when accept tree movement
 }

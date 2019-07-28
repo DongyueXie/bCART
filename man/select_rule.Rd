@@ -4,7 +4,7 @@
 \alias{select_rule}
 \title{select splitting variable and value}
 \usage{
-select_rule(X, y, Tmin, rule)
+select_rule(X, Tmin, rule)
 }
 \description{
 select splitting variable and value

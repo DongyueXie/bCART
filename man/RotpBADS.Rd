@@ -7,7 +7,7 @@
 RotpBADS(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
   ntree = 50, ndpost = 700, nskip = 300, Tmin = 2,
   printevery = 100, save_trees = F, rotate = "rr", srpk = 2 *
-  ncol(X), pre_train = T)
+  ncol(X))
 }
 \arguments{
 \item{rotate}{'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'}

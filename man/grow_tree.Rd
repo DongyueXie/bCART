@@ -4,7 +4,7 @@
 \alias{grow_tree}
 \title{Grow tree proposal}
 \usage{
-grow_tree(btree_obj, X, Rj, Tmin, rule)
+grow_tree(btree_obj, X, Tmin, rule)
 }
 \description{
 Grow tree proposal

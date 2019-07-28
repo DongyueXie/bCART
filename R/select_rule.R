@@ -1,7 +1,7 @@
 #' @title select splitting variable and value
 #' @export
 
-select_rule=function(X,y,Tmin,rule){
+select_rule=function(X,Tmin,rule){
   p_var=ncol(X)
 
   if(missing(rule)){

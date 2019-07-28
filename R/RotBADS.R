@@ -7,7 +7,7 @@
 RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
                  lambda=NA, sigest=NA,sigmaf=NA,
                  ntree=50,ndpost=200,nskip=100,Tmin=2,printevery=100,
-                 save_trees=F,rotate='rr',pre_train=T){
+                 save_trees=F,rotate='rr',pre_train=T,n_pre_train=100){
 
   n=nrow(X)
   p=ncol(X)
@@ -44,7 +44,7 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
   #give each tree a list speicifying the parameters
   treelist=lapply(treelist, function(x){
     x=list(s_pos=NULL,s_dir=NULL,s_rule=NULL,s_data=NULL,s_depth=NULL,s_obs=NULL,
-           t_pos=1,t_data=list(1:n),t_depth=0,RotMat=diag(p))
+           t_pos=1,t_data=list(1:n),t_depth=0,RotMat=diag(p),t_test_data=NULL)
   })
 
   #a list of ndpost lists and each of ndpost lists is a list of ntree lists.
@@ -65,11 +65,11 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
 
   for(j in 1:ntree){
     Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
-    grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin)
+    grown_tree=grow_tree(treelist[[j]],X,Tmin)
     new_treej=grown_tree$btree_obj
     treelist[[j]]=new_treej
-    hat=yhat.draw(new_treej,x.test,Rj,tau,sigest^2,draw.test=F)
-    yhat.train.j[j,] = hat$yhat
+    hat=yhat.draw.train(new_treej,Rj,tau,sigest^2)
+    yhat.train.j[j,] = hat
   }
 
 
@@ -80,13 +80,19 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
     #propose modification to each tree
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
+      sig2 = sigma_draw[i]^2
 
       RotMat_j = Rmat(p)
-      X_j = X%*%RotMat_j
-      changed_tree=change_tree(treelist[[j]],X_j,Rj,Tmin)
+      if(rotate=='rr'){
+        X_j = X%*%RotMat_j
+      }
+      if(rotate=='rraug'){
+        X_j = cbind(X,X%*%RotMat_j)
+      }
+      changed_tree=change_tree(treelist[[j]],X_j,Tmin)
       new_treej = changed_tree$btree_obj
-      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma_draw[i]^2,tau)
-                      - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma_draw[i]^2,tau))
+      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sig2,tau)
+                      - log_lik(changed_tree$t_data_old,Rj,Tmin,sig2,tau))
       alpha = lik_ratio
 
 
@@ -98,26 +104,25 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
 
       if(A<alpha){
         new_treej$RotMat = RotMat_j
-        treelist[[j]]=new_treej
 
-        #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
         if(i<=nskip){
-          hat=yhat.draw(new_treej,x.test%*%RotMat_j,Rj,tau,sigma_draw[i]^2,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(new_treej,Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(new_treej,x.test%*%RotMat_j,Rj,tau,sigma_draw[i]^2)
+          hat=yhat.draw.rotation(new_treej,x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
+          new_treej$t_test_data = hat$t_idx
         }
 
+        treelist[[j]]=new_treej
 
       }else{
         if(i<=nskip){
-          hat=yhat.draw(treelist[[j]],x.test%*%treelist[[j]]$RotMat,Rj,tau,sigma_draw[i]^2,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(treelist[[j]],x.test%*%treelist[[j]]$RotMat,Rj,tau,sigma_draw[i]^2)
+          hat=yhat.draw2.rotation(treelist[[j]],x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }

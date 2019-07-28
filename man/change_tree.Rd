@@ -4,7 +4,7 @@
 \alias{change_tree}
 \title{Change proposal}
 \usage{
-change_tree(btree_obj, X, Rj, Tmin, rule)
+change_tree(btree_obj, X, Tmin, rule)
 }
 \description{
 Change proposal
