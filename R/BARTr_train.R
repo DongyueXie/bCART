@@ -33,7 +33,7 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power){
     lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,sigma2,tau)
                     - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma2,tau))
 
-    trans_ratio=p_modify[1]/p_modify[2]*w2(new_treej)/(length(new_treej$t_pos))
+    trans_ratio=p_modify[1]/p_modify[2]*w2(treej)/(length(new_treej$t_pos))
     prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
     #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
     alpha=lik_ratio*trans_ratio*prior_ratio
