@@ -4,7 +4,8 @@
 \alias{BARTr_train}
 \title{BART model train workhourse}
 \usage{
-BARTr_train(X, Rj, treej, p_modify, Tmin, rule, sigma2, tau, base, power)
+BARTr_train(X, Rj, treej, p_modify, Tmin, rule, sigma2, tau, base, power,
+  p_split, r)
 }
 \arguments{
 \item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
