@@ -3,7 +3,7 @@
 #' @export
 #'
 
-BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power){
+BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_split,r){
 
 
   move=which(rmultinom(1,1,p_modify)==1)
@@ -20,8 +20,11 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power){
                     - log_lik(grown_tree$t_data_old,Rj,Tmin,sigma2,tau))
     trans_ratio=p_modify[2]/p_modify[1]*length(treej$t_pos)/w2(new_treej)
     #use new p_split
-    #prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
-    prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
+    if(p_split == 'CGM'){
+      prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
+    }else{
+      prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
+    }
     alpha=lik_ratio*trans_ratio*prior_ratio
     #print(sprintf('lik_ratio %.3f,trans_ratio %.3f,prior.ratio %.3f,alpha %.3f',lik_ratio,trans_ratio,prior_ratio,alpha))
     #print(sprintf('loglik_new %.3f, old %.3f',log_lik(grown_tree$t_data_new,X,Rj,Tmin,sigma_draw[i]^2,V),log_lik(grown_tree$t_data_old,X,Rj,Tmin,sigma_draw[i]^2,V)))
@@ -34,8 +37,11 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power){
                     - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma2,tau))
 
     trans_ratio=p_modify[1]/p_modify[2]*w2(treej)/(length(new_treej$t_pos))
-    prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
-    #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
+    if(p_split=='CGM'){
+      prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
+    }else{
+      prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
+    }
     alpha=lik_ratio*trans_ratio*prior_ratio
 
   }else{

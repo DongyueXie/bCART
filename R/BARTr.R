@@ -5,7 +5,7 @@
 
 BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
                k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
-               power=2.0, base=.95,w=rep(1,length(y)),
+               power=2.0, base=.95,p_split='CGM',r=2,w=rep(1,length(y)),
                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
                save_trees=F,rule='bart',pre_train=T,n_pre_train=100){
 
@@ -95,7 +95,7 @@ BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
       sig2 = sigma_draw[i]^2
 
       BART_draw = BARTr_train(X,Rj,treelist[[j]],p_modify,Tmin,
-                              rule,sig2,tau,base,power)
+                              rule,sig2,tau,base,power,p_split,r)
 
       alpha = BART_draw$alpha
       new_treej = BART_draw$new_treej

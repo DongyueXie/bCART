@@ -1,12 +1,13 @@
 #' @title Classification BART
 #' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
+#' @param p_split which P(split) rule to use: CGM or RS. CGM: base*(1+d)^(-power); RS: r^(-d), 2 <= r <= n
 #' @export
 
 pBARTr=function(X,y,x.test,cutoff=0.5,
                 k=2.0, binaryOffset=NULL,
-                power=2.0, base=.95,w=rep(1,length(y)),
+                power=2.0, base=.95,p_split='CGM',r=2,w=rep(1,length(y)),
                 ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-                save_trees=F,rule='bart',pre_train=T,n_pre_train=100){
+                save_trees=F,rule='bart',pre_train=F,n_pre_train=100){
 
   n=nrow(X)
   p=ncol(X)
@@ -20,7 +21,7 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
 
   #a list of ntree empty lists(trees).
   treelist=vector(ntree,mode='list')
-  #give each tree a list speicifying the parameters
+  #give each tree a list specifying the parameters
   treelist=lapply(treelist, function(x){
     x=list(s_pos=NULL,s_dir=NULL,s_rule=NULL,s_data=NULL,s_depth=NULL,s_obs=NULL,
            t_pos=1,t_data=list(1:n),t_depth=0,t_test_data=NULL)
@@ -69,7 +70,7 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
       sig2 = 1
       BART_draw = BARTr_train(X,Rj,treelist[[j]],p_modify,Tmin,
-                              rule,sig2,tau,base,power)
+                              rule,sig2,tau,base,power,p_split,r)
 
       alpha = BART_draw$alpha
       new_treej = BART_draw$new_treej
