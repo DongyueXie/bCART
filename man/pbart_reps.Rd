@@ -4,9 +4,9 @@
 \alias{pbart_reps}
 \title{Run reps of pbart on real data set}
 \usage{
-pbart_reps(x, y, ntrain, ntest, nmaxtest = 1000, nreps = 50,
-  seed = 12345, ntrees = c(50, 200), ks = c(0.5, 2, 5),
-  powers = c(2, 3, 5, 10, nrow(x)), k_folds = 5, verbose = T)
+pbart_reps(x, y, ntrain, nmaxtest = 1000, nreps = 50, seed = 12345,
+  ntrees = c(50, 200), ks = c(0.5, 2, 5), powers = c(2, 3, 5, 10,
+  ntrain), k_folds = 5)
 }
 \description{
 Run reps of pbart on real data set
