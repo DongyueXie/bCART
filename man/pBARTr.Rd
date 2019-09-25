@@ -7,8 +7,8 @@
 pBARTr(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
   power = 2, base = 0.95, p_split = "CGM", r = 2, w = rep(1,
   length(y)), ntree = 50, ndpost = 700, nskip = 300, Tmin = 2,
-  printevery = 100, p_modify = c(2.5, 2.5, 4)/9, save_trees = F,
-  rule = "bart", pre_train = F, n_pre_train = 100)
+  printevery = 100, p_modify = c(0.5, 0.5, 0), save_trees = F,
+  rule = "bart", pre_train = F, n_pre_train = 100, n_cores = 4)
 }
 \arguments{
 \item{p_split}{which P(split) rule to use: CGM or RS. CGM: base*(1+d)^(-power); RS: r^(-d), 2 <= r <= n}
