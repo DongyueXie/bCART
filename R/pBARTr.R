@@ -6,14 +6,20 @@
 pBARTr=function(X,y,x.test,cutoff=0.5,
                 k=2.0, binaryOffset=NULL,
                 power=2.0, base=.95,p_split='CGM',r=2,w=rep(1,length(y)),
-                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-                save_trees=F,rule='bart',pre_train=F,n_pre_train=100){
+                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(0.5, 0.5, 0),
+                save_trees=F,rule='bart',pre_train=F,n_pre_train=100,n_cores=4){
+
+
+  cl = makeCluster(no_cores)
 
   n=nrow(X)
   p=ncol(X)
   nt=nrow(x.test)
 
   #center
+  if(is.factor(y)){
+    y = as.numeric(y) - 1
+  }
   fmean=mean(y)
   #priors: nu,lambda,tau
   tau = 3/(k*sqrt(ntree))
@@ -69,8 +75,19 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
       sig2 = 1
+
+      t1 = Sys.time()
+
       BART_draw = BARTr_train(X,Rj,treelist[[j]],p_modify,Tmin,
                               rule,sig2,tau,base,power,p_split,r)
+
+      t2 = Sys.time()
+
+      #print('---------')
+      #if((t2-t1)>0.01){
+      #  print(BART_draw$move)
+      #}
+      #print(t2-t1)
 
       alpha = BART_draw$alpha
       new_treej = BART_draw$new_treej
@@ -83,6 +100,9 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
       if(is.nan(alpha)){
         alpha=0
       }
+
+      t3 = Sys.time()
+
       if(A<alpha){
         # we accept the new tree
         tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
@@ -91,7 +111,7 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
           hat=yhat.draw.train(new_treej,Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(new_treej,x.test,Rj,tau,sig2)
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sig2,cl)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
           new_treej$t_test_data = hat$t_idx
@@ -99,16 +119,26 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
 
         treelist[[j]]=new_treej
 
+        t4 = Sys.time()
+
+        #print(t4-t3)
+        #print('aaaaaaaaa')
+
 
       }else{
         if(i<=nskip){
           hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw2(treelist[[j]],x.test,Rj,tau,sig2)
+          hat=yhat.draw2(treelist[[j]],x.test,Rj,tau,sig2,cl)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }
+
+        t4 = Sys.time()
+
+        #print(t4-t3)
+        #print('rrrrrrrrr')
       }
 
 
@@ -135,6 +165,8 @@ pBARTr=function(X,y,x.test,cutoff=0.5,
 
   yhat = 1*((phat.train.mean)>=cutoff)
   ypred = 1*((phat.test.mean)>=cutoff)
+
+  stopCluster(cl)
 
   return(list(yhat=yhat,ypred=ypred,
               yhat.train=yhat.train,yhat.test=yhat.test,

@@ -13,19 +13,32 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_spl
 
   if(move==1){
     #grow
+
     grown_tree=grow_tree(treej,X,Tmin,rule)
     new_treej=grown_tree$btree_obj
+
     #calculate acceptance probablity
-    lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,sigma2,tau)
-                    - log_lik(grown_tree$t_data_old,Rj,Tmin,sigma2,tau))
-    trans_ratio=p_modify[2]/p_modify[1]*length(treej$t_pos)/w2(new_treej)
-    #use new p_split
-    if(p_split == 'CGM'){
-      prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
+    #lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,sigma2,tau)
+    #                - log_lik(grown_tree$t_data_old,Rj,Tmin,sigma2,tau))
+
+
+    lik_ratio = lik_ratio_grow(grown_tree$t_data_old,grown_tree$t_data_new,Rj,Tmin,sigma2,tau)
+
+
+    if(lik_ratio == 0){
+      alpha = 0
     }else{
-      prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
+      trans_ratio=p_modify[2]/p_modify[1]*length(treej$t_pos)/w2(new_treej)
+      #use new p_split
+      if(p_split == 'CGM'){
+        prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
+      }else{
+        prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
+      }
+      alpha=lik_ratio*trans_ratio*prior_ratio
     }
-    alpha=lik_ratio*trans_ratio*prior_ratio
+
+
     #print(sprintf('lik_ratio %.3f,trans_ratio %.3f,prior.ratio %.3f,alpha %.3f',lik_ratio,trans_ratio,prior_ratio,alpha))
     #print(sprintf('loglik_new %.3f, old %.3f',log_lik(grown_tree$t_data_new,X,Rj,Tmin,sigma_draw[i]^2,V),log_lik(grown_tree$t_data_old,X,Rj,Tmin,sigma_draw[i]^2,V)))
   }else if(move==2){
@@ -33,8 +46,10 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_spl
     pruned_tree=prune_tree(treej)
     new_treej=pruned_tree$btree_obj
 
-    lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,sigma2,tau)
-                    - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma2,tau))
+    #lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,sigma2,tau)
+    #                - log_lik(pruned_tree$t_data_old,Rj,Tmin,sigma2,tau))
+
+    lik_ratio = lik_ratio_prune(pruned_tree$t_data_old,pruned_tree$t_data_new,Rj,Tmin,sigma2,tau)
 
     trans_ratio=p_modify[1]/p_modify[2]*w2(treej)/(length(new_treej$t_pos))
     if(p_split=='CGM'){
@@ -48,9 +63,9 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_spl
     # change(simple)
     changed_tree=change_tree(treej,X,Tmin,rule)
     new_treej = changed_tree$btree_obj
-    lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma2,tau)
-                    - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma2,tau))
-    alpha = lik_ratio
+    #lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sigma2,tau)
+    #                - log_lik(changed_tree$t_data_old,Rj,Tmin,sigma2,tau))
+    alpha = lik_ratio_change(changed_tree$t_data_old,changed_tree$t_data_new,Rj,Tmin,sigma2,tau)
   }
 
   return(list(alpha=alpha,move=move,new_treej=new_treej))

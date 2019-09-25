@@ -2,7 +2,7 @@
 #' @return Draws of yhat and ypred
 #' @export
 
-yhat.draw=function(btree_obj,x.test,Rj,tau,sigma2){
+yhat.draw=function(btree_obj,x.test,Rj,tau,sigma2,cl){
   t_data=btree_obj$t_data
 
   t_R<-lapply(t_data,function(x) Rj[x])
@@ -16,7 +16,11 @@ yhat.draw=function(btree_obj,x.test,Rj,tau,sigma2){
   })
 
 
-    t_idx = apply(x.test,1,function(x){find_terminal_idx(x,btree_obj)})
+    #t_idx = apply(x.test,1,function(x){find_terminal_idx(x,btree_obj)})
+
+    t_idx = parRapply(cl,x.test,function(x){find_terminal_idx(x,btree_obj)})
+
+    #print(t_idx)
 
 
     yhat=c()

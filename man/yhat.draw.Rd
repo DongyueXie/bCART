@@ -4,7 +4,7 @@
 \alias{yhat.draw}
 \title{Draw of y when accept tree movement}
 \usage{
-yhat.draw(btree_obj, x.test, Rj, tau, sigma2)
+yhat.draw(btree_obj, x.test, Rj, tau, sigma2, cl)
 }
 \value{
 Draws of yhat and ypred
