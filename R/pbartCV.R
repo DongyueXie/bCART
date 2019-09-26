@@ -2,11 +2,12 @@
 #'@return predicted label and test AUC
 #'@export
 
-pbartCV = function(x,y,x.test,y.test,ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2,3,5,10,nrow(x)),k_folds=5,verbose=F){
+pbartCV = function(x,y,x.test,y.test,ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2,3,5,10,nrow(x)),
+                   k_folds=5,verbose=F){
   n_combns = length(ntrees)*length(ks)*length(powers)
   results = matrix(nrow=n_combns,ncol=4)
   #create folds
-  folds = split(1:nrow(x),1:k_folds)
+  folds = createFolds(1:nrow(x),k_folds)
 
   idx = 0
   for(it in (ntrees)){
@@ -22,7 +23,7 @@ pbartCV = function(x,y,x.test,y.test,ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2
           fit = quiet(pbart(x_train,y_train,x_test,ntree=it,k=jk,power=kp))
           Test_AUC = AUC(y_test,as.numeric(colSums(pnorm(fit$yhat.test))/nrow(fit$yhat.test)>0.5))
           Test_AUC
-        },mc.cores = 4)
+        },mc.cores = k_folds)
         cv_AUC = mean(unlist(cv_AUC))
         results[idx,] = c(cv_AUC,it,jk,kp)
       }
