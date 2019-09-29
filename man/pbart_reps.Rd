@@ -6,7 +6,7 @@
 \usage{
 pbart_reps(x, y, ntrain = floor(nrow(x) * 0.5), nmaxtest = 1000,
   nreps = 20, seed = 12345, ntrees = c(50, 200), ks = c(0.5, 2, 5),
-  powers = c(2, 3, 5, 10, ntrain), k_folds = 5)
+  psplit = "CGM", powers = c(2, 3, 5, 10, 100), k_folds = 5)
 }
 \description{
 Run reps of pbart on real data set

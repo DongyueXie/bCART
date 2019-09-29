@@ -2,14 +2,24 @@
 #'@export
 
 pbart_reps = function(x,y,ntrain = floor(nrow(x)*0.5),nmaxtest=1000,nreps=20,seed=12345,
-                      ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2,3,5,10,ntrain),k_folds=5){
+                      ntrees=c(50,200),ks=c(0.5,2,5),psplit='CGM',powers = c(2,3,5,10,100),k_folds=5){
 
   set.seed(seed, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
-  if(is.factor(y)){y = as.numeric(y)-1}
+  if(is.factor(y)){
+    y = as.numeric(y)
+    y = (y - min(y))/(max(y)-min(y))
+    }
 
   cv_results = c()
   cv_best_params = c()
+
+  if(psplit=='CGM'){
+    powers = c(powers,ntrain)
+  }
+  if(psplit=='RS'){
+    powers = 1/c(powers,ntrain)
+  }
 
   for(rp in 1:nreps){
     train.idx = sample(1:nrow(x),ntrain)
