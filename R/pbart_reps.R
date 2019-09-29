@@ -4,7 +4,7 @@
 pbart_reps = function(x,y,ntrain = floor(nrow(x)*0.5),nmaxtest=1000,nreps=20,seed=12345,
                       ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2,3,5,10,ntrain),k_folds=5){
 
-  set.seed(seed)
+  set.seed(seed, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
   if(is.factor(y)){y = as.numeric(y)-1}
 

@@ -15,6 +15,5 @@ Depends:
     SSLASSO,
     mvtnorm,
     MASS,
-    pROC,
-    parallel
+    pROC
 RoxygenNote: 6.1.0

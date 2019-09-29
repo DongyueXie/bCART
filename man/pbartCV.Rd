@@ -5,10 +5,11 @@
 \title{cross-validated bart}
 \usage{
 pbartCV(x, y, x.test, y.test, ntrees = c(50, 200), ks = c(0.5, 2, 5),
-  powers = c(2, 3, 5, 10, nrow(x)), k_folds = 5, verbose = F)
+  powers = c(2, 3, 5, 10, nrow(x)), k_folds = 5, verbose = F,
+  isparallel = T)
 }
 \value{
-predicted label and test AUC
+predicted label and test AUC: ypred,Test_AUC,best_params
 }
 \description{
 cross-validated bart
