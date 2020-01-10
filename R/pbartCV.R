@@ -14,6 +14,7 @@ pbartCV = function(x,y,x.test,y.test,ntrees=c(50,200),ks=c(0.5,2,5),powers = c(2
 
   while(sum(unlist(lapply(y_folds,function(z){length(unique(z))}))==1)>0){
     folds = lapply(split(sample(1:nrow(x)),1:k_folds),sort)
+    #folds = createFolds(1:nrow(x),k_folds)
     y_folds = lapply(folds,function(z){y[z]})
     }
 
