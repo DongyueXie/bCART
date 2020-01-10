@@ -1,7 +1,7 @@
 Package: bCART
 Type: Package
 Title: Explore variants of Bayesian tree. 
-Version: 0.1.0
+Version: 0.1.1
 Author: Dongyue Xie
 Maintainer: Dongyue Xie <dongyxie@gmail.com>
 Description: A collection of codes for bCART and BART.
@@ -16,4 +16,4 @@ Depends:
     mvtnorm,
     MASS,
     pROC
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
