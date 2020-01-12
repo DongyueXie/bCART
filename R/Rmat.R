@@ -1,4 +1,4 @@
-#' @title Generate Random Rotation matrix
+#' @title Generate one Random Rotation matrix via QR
 #' @export
 
 Rmat = function(p){

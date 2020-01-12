@@ -1,13 +1,15 @@
 #' @title Rotation BADS for classification
-#' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'
+#' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation'
 #' @param srpk the number of cols of sparse projection matrix
+#' @param Others see ?BADS
+#' @return See ?BADS
 #' @export
 
 
 RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
                  lambda=NA, sigest=NA,sigmaf=NA,
                  ntree=50,ndpost=200,nskip=100,Tmin=2,printevery=100,
-                 save_trees=F,rotate='rr',pre_train=T,n_pre_train=100){
+                 save_trees=F,rotate='rr',rule='bart'){
 
   n=nrow(X)
   p=ncol(X)
@@ -65,11 +67,8 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
 
   for(j in 1:ntree){
     Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
-    grown_tree=grow_tree(treelist[[j]],X,Tmin)
-    new_treej=grown_tree$btree_obj
-    treelist[[j]]=new_treej
-    hat=yhat.draw.train(new_treej,Rj,tau,sigest^2)
-    yhat.train.j[j,] = hat
+    treelist[[j]]=grow_tree(treelist[[j]],X,Tmin,rule)$btree_obj
+    yhat.train.j[j,] = yhat.draw.train(treelist[[j]],Rj,tau,sigest^2)
   }
 
 
@@ -91,9 +90,8 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
       }
       changed_tree=change_tree(treelist[[j]],X_j,Tmin)
       new_treej = changed_tree$btree_obj
-      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sig2,tau)
+      alpha = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sig2,tau)
                       - log_lik(changed_tree$t_data_old,Rj,Tmin,sig2,tau))
-      alpha = lik_ratio
 
 
       A=runif(1)
@@ -109,7 +107,7 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
           hat=yhat.draw.train(new_treej,Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw.rotation(new_treej,x.test,Rj,tau,sig2,rotate)
+          hat=yhat.draw.bads(new_treej,x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
           new_treej$t_test_data = hat$t_idx
@@ -122,7 +120,7 @@ RotBADS=function(X,y,x.test,sigdf=3, sigquant=.90,k=2,
           hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw2.rotation(treelist[[j]],x.test,Rj,tau,sig2,rotate)
+          hat=yhat.draw2.bads(treelist[[j]],x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }

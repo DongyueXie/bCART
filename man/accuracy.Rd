@@ -2,13 +2,15 @@
 % Please edit documentation in R/accuracy.R
 \name{accuracy}
 \alias{accuracy}
-\title{Accuracy}
+\title{Calculate Accuracy of binary classification}
 \usage{
 accuracy(label, pred)
 }
 \arguments{
 \item{label}{True labels}
+
+\item{pred}{predicted labels}
 }
 \description{
-Accuracy
+Calculate Accuracy of binary classification
 }

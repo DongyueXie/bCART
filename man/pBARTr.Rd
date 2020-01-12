@@ -2,19 +2,67 @@
 % Please edit documentation in R/pBARTr.R
 \name{pBARTr}
 \alias{pBARTr}
-\title{Classification BART}
+\title{Fit a bayesian additive regression tree(BART) model for classification}
 \usage{
 pBARTr(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
-  power = 2, base = 0.95, p_split = "CGM", r = 2, w = rep(1,
-  length(y)), ntree = 50, ndpost = 700, nskip = 300, Tmin = 2,
-  printevery = 100, p_modify = c(0.5, 0.5, 0), save_trees = F,
-  rule = "bart", pre_train = F, n_pre_train = 100, n_cores = 4)
+  power = 2, base = 0.95, p_split = "CGM", r = 2, ntree = 50,
+  ndpost = 700, nskip = 300, Tmin = 2, printevery = 100,
+  p_modify = c(0.5, 0.5, 0), save_trees = F, rule = "bart",
+  pre_train = F, n_pre_train = 100)
 }
 \arguments{
-\item{p_split}{which P(split) rule to use: CGM or RS. CGM: base*(1+d)^(-power); RS: r^(-d), 2 <= r <= n}
+\item{X}{training samples by features matrix}
 
-\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
+\item{y}{response}
+
+\item{x.test}{testing samples by feature matrix}
+
+\item{cutoff}{label = 1 if p>cutoff; else label = 0.}
+
+\item{k, power, base}{see ?BART::pbart}
+
+\item{binaryOffset}{The model is P(Y=1 | x) = F(f(x) + binaryOffset).}
+
+\item{p_split}{choice of 'CGM', 'RS'. 'CGM' splits an internal node with probability base*(1+d)^(-power); 'RS': r^(-d), 2 <= r <= n. d is the depth of an internal node.}
+
+\item{r}{'RS' splits an internal node with probability r^(-d), 2 <= r <= n. d is the depth of an internal node.}
+
+\item{ntree}{number of trees}
+
+\item{nskip, ndpost}{number of burn-in and posterior draws}
+
+\item{Tmin}{minimum number of samples in a leaf node allowed}
+
+\item{printevery}{print progress for every 'printevery' iterations}
+
+\item{p_modify}{proportion of three moves: grow, prune, change.}
+
+\item{save_trees}{whether save all the trees from each iteration as a list}
+
+\item{rule}{The splitting rule of an internal node. Choices are: 1. "grp": Gaussian random projection, randomly draw a length p vector from standard normal as the linear combination coefficients of p variables; 2. sgrp: sparse Gaussian random projection, which generates sparse linear combination coefficients; 3. bart: originla bart splits, which are axis-aligned splits; 4. hyperplane: randomly connect two points from the node as the partiton of node space.}
+
+\item{pre_train}{whether pre-train the BART model using 'bart' rule before switching to another splitting rule.}
+
+\item{n_pre_train}{number of iterations of pre-train}
+}
+\value{
+BARTr returns a list of the following elements.
+\item{yhat.train}{A matrix with ndpost rows and nrow(X) columns.}
+\item{yhat.test}{A matrix with ndpost rows and nrow(x.test) columns.}
+\item{yhat.train.mean}{Posterior mean of MCMC draws of traning data fits}
+\item{yhat.test.mean}{Posterior mean of MCMC draws of testing data fits}
+\item{sigma}{draws of random error vairaince, length = nskip+ndpost}
+\item{tree_history}{If save_trees = TRUE, then a list of all trees}
+\item{tree_proposal_total}{A ntree by length(p_modify) matrix, the (i,j)th entry is the total number of jth proposal of ith tree}
+\item{tree_proposal_accept}{A ntree by length(p_modify) matrix, the (i,j)th entry is the total number of accepted jth proposal of ith tree}
+\item{tree_leaf_count}{Number of leaf nodes in each tree}
 }
 \description{
-Classification BART
+Fit a bayesian additive regression tree(BART) model for classification
+}
+\references{
+Chipman, H., George, E., and McCulloch R. (2010) Bayesian Additive Regression Trees. The Annals of Applied Statistics, 4,1, 266-298 <doi:10.1214/09-AOAS285>.
+}
+\author{
+Dongyue Xie: \email{dongyxie@gmail.com}
 }

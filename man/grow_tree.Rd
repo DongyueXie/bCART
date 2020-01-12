@@ -6,6 +6,9 @@
 \usage{
 grow_tree(btree_obj, X, Tmin, rule)
 }
+\value{
+growed tree, old tree depth, old tree leaf data index, new tree leaf data index.
+}
 \description{
 Grow tree proposal
 }

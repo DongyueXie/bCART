@@ -1,11 +1,37 @@
-#' @title Fit a BART model
-#' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
+#' @title Fit a bayesian additive regression tree(BART) model for regression
+#' @param X training samples by features matrix
+#' @param y response
+#' @param x.test testing samples by feature matrix
+#' @param sigdf,sigquant,k,lambda,sigest,sigmaf,power,base see ?BART::wbart
+#' @param p_split choice of 'CGM', 'RS'. 'CGM' splits an internal node with probability base*(1+d)^(-power); 'RS': r^(-d), 2 <= r <= n. d is the depth of an internal node.
+#' @param r 'RS' splits an internal node with probability r^(-d), 2 <= r <= n. d is the depth of an internal node.
+#' @param ntree number of trees
+#' @param nskip,ndpost number of burn-in and posterior draws
+#' @param Tmin minimum number of samples in a leaf node allowed
+#' @param printevery print progress for every 'printevery' iterations
+#' @param p_modify proportion of three moves: grow, prune, change.
+#' @param save_trees whether save all the trees from each iteration as a list
+#' @param rule The splitting rule of an internal node. Choices are: 1. "grp": Gaussian random projection, randomly draw a length p vector from standard normal as the linear combination coefficients of p variables; 2. sgrp: sparse Gaussian random projection, which generates sparse linear combination coefficients; 3. bart: originla bart splits, which are axis-aligned splits; 4. hyperplane: randomly connect two points from the node as the partiton of node space.
+#' @param pre_train whether pre-train the BART model using 'bart' rule before switching to another splitting rule.
+#' @param n_pre_train number of iterations of pre-train
+#' @return BARTr returns a list of the following elements.
+#' \item{yhat.train}{A matrix with ndpost rows and nrow(X) columns.}
+#' \item{yhat.test}{A matrix with ndpost rows and nrow(x.test) columns.}
+#' \item{yhat.train.mean}{Posterior mean of MCMC draws of traning data fits}
+#' \item{yhat.test.mean}{Posterior mean of MCMC draws of testing data fits}
+#' \item{sigma}{draws of random error vairaince, length = nskip+ndpost}
+#' \item{tree_history}{If save_trees = TRUE, then a list of all trees}
+#' \item{tree_proposal_total}{A ntree by length(p_modify) matrix, the (i,j)th entry is the total number of jth proposal of ith tree}
+#' \item{tree_proposal_accept}{A ntree by length(p_modify) matrix, the (i,j)th entry is the total number of accepted jth proposal of ith tree}
+#' \item{tree_leaf_count}{Number of leaf nodes in each tree}
+#' @author Dongyue Xie: \email{dongyxie@gmail.com}
+#' @references Chipman, H., George, E., and McCulloch R. (2010) Bayesian Additive Regression Trees. The Annals of Applied Statistics, 4,1, 266-298 <doi:10.1214/09-AOAS285>.
 #' @export
 
 
 BARTr=function(X,y,x.test,sigdf=3, sigquant=.90,
                k=2.0, lambda=NA, sigest=NA,sigmaf=NA,
-               power=2.0, base=.95,p_split='CGM',r=2,w=rep(1,length(y)),
+               power=2.0, base=.95,p_split='CGM',r=2,
                ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
                save_trees=F,rule='bart',pre_train=T,n_pre_train=100){
 

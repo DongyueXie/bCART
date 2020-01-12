@@ -2,10 +2,10 @@
 % Please edit documentation in R/find_terminal_idx.R
 \name{find_terminal_idx}
 \alias{find_terminal_idx}
-\title{Find terminal nodes of a tree}
+\title{Find which leaf node a test sample belongs to}
 \usage{
 find_terminal_idx(X_test, btree_obj)
 }
 \description{
-Find terminal nodes of a tree
+Find which leaf node a test sample belongs to
 }

@@ -7,12 +7,17 @@
 RotBADS(X, y, x.test, sigdf = 3, sigquant = 0.9, k = 2,
   lambda = NA, sigest = NA, sigmaf = NA, ntree = 50,
   ndpost = 200, nskip = 100, Tmin = 2, printevery = 100,
-  save_trees = F, rotate = "rr", pre_train = T, n_pre_train = 100)
+  save_trees = F, rotate = "rr", rule = "bart")
 }
 \arguments{
-\item{rotate}{'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'}
+\item{rotate}{'rr'='random rotation'','rraug'='random rotation+augmentation'}
 
 \item{srpk}{the number of cols of sparse projection matrix}
+
+\item{Others}{see ?BADS}
+}
+\value{
+See ?BADS
 }
 \description{
 Rotation BADS for classification

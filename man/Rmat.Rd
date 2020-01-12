@@ -2,10 +2,10 @@
 % Please edit documentation in R/Rmat.R
 \name{Rmat}
 \alias{Rmat}
-\title{Generate Random Rotation matrix}
+\title{Generate one Random Rotation matrix via QR}
 \usage{
 Rmat(p)
 }
 \description{
-Generate Random Rotation matrix
+Generate one Random Rotation matrix via QR
 }

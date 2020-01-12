@@ -2,10 +2,10 @@
 % Please edit documentation in R/quiet.R
 \name{quiet}
 \alias{quiet}
-\title{Mute BART fit}
+\title{Mute any message from a function}
 \usage{
 quiet(x)
 }
 \description{
-Mute BART fit
+source: \url{https://r.789695.n4.nabble.com/Suppressing-output-e-g-from-cat-td859876.html}
 }

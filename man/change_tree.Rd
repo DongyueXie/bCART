@@ -6,6 +6,9 @@
 \usage{
 change_tree(btree_obj, X, Tmin, rule)
 }
+\value{
+changed tree, old leaf mode data index, new leaf node data index
+}
 \description{
 Change proposal
 }

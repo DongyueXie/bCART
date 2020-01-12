@@ -1,20 +1,31 @@
 #' @title Rotation BADS for classification
-#' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'
-#' @param srpk the number of cols of sparse projection matrix
+#' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation'
+#' @param Others see ?pBADS
+#' @return See ?pBADS
+#' @importFrom BART rtnorm
 #' @export
 
 
 RotpBADS=function(X,y,x.test,cutoff=0.5,
                   k=2.0, binaryOffset=NULL,
                   ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,
-                  save_trees=F,rotate = 'rr',srpk=2*ncol(X)){
+                  save_trees=F,rule='bart',rotate = 'rr'){
 
   n=nrow(X)
   p=ncol(X)
   nt=nrow(x.test)
 
-  #center
+  if(is.factor(y)){
+    y = as.numeric(y)
+    y = (y-min(y))/(max(y)-min(y))
+  }
+
   fmean=mean(y)
+
+  #whcih y = 1; y=0
+  y1.idx = which(y==1)
+  y0.idx = which(y==0)
+
 
   tau = 3/(k*sqrt(ntree))
   if(length(binaryOffset)==0){binaryOffset=qnorm(fmean)}
@@ -45,26 +56,19 @@ RotpBADS=function(X,y,x.test,cutoff=0.5,
 
   bm.f = colSums(yhat.train.j)
   y.train = c()
-  for(ni in 1:n){
-    if(y[ni]==1){
-      y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
-    }else{
-      y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
-    }
-  }
+  y.train[y1.idx] = rtnorm(length(y1.idx),bm.f[y1.idx],1,-binaryOffset)
+  y.train[y0.idx] = -rtnorm(length(y0.idx),-bm.f[y0.idx],1,binaryOffset)
 
   for(j in 1:ntree){
     Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
     if(rotate=='rr'){
-      grown_tree=grow_tree(treelist[[j]],X,Tmin)
-    }else{
-      grown_tree=grow_tree(treelist[[j]],cbind(X,X%*%Rmat(p)),Tmin)
+      treelist[[j]]=grow_tree(treelist[[j]],X,Tmin)$btree_obj
+    }
+    if(rotate=='rraug'){
+      treelist[[j]]=grow_tree(treelist[[j]],cbind(X,X%*%Rmat(p)),Tmin)$btree_obj
     }
 
-    new_treej=grown_tree$btree_obj
-    treelist[[j]]=new_treej
-    hat=yhat.draw.train(new_treej,Rj,tau,1)
-    yhat.train.j[j,] = hat
+    yhat.train.j[j,]=yhat.draw.train(treelist[[j]],Rj,tau,1)
   }
 
 
@@ -74,13 +78,8 @@ RotpBADS=function(X,y,x.test,cutoff=0.5,
 
     bm.f = colSums(yhat.train.j)
     y.train = c()
-    for(ni in 1:n){
-      if(y[ni]==1){
-        y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
-      }else{
-        y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
-      }
-    }
+    y.train[y1.idx] = rtnorm(length(y1.idx),bm.f[y1.idx],1,-binaryOffset)
+    y.train[y0.idx] = -rtnorm(length(y0.idx),-bm.f[y0.idx],1,binaryOffset)
 
     #propose modification to each tree
     for (j in 1:ntree) {
@@ -98,9 +97,8 @@ RotpBADS=function(X,y,x.test,cutoff=0.5,
 
       changed_tree=change_tree(treelist[[j]],X_j,Tmin)
       new_treej = changed_tree$btree_obj
-      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sig2,tau)
+      alpha = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,sig2,tau)
                       - log_lik(changed_tree$t_data_old,Rj,Tmin,sig2,tau))
-      alpha = lik_ratio
 
       A=runif(1)
 
@@ -115,7 +113,7 @@ RotpBADS=function(X,y,x.test,cutoff=0.5,
           hat=yhat.draw.train(new_treej,Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw.rotation(new_treej,x.test,Rj,tau,sig2,rotate)
+          hat=yhat.draw.bads(new_treej,x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
           new_treej$t_test_data = hat$t_idx
@@ -128,7 +126,7 @@ RotpBADS=function(X,y,x.test,cutoff=0.5,
           hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
           yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw2.rotation(treelist[[j]],x.test,Rj,tau,sig2,rotate)
+          hat=yhat.draw2.bads(treelist[[j]],x.test,Rj,tau,sig2,rotate)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }

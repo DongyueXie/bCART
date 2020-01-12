@@ -2,10 +2,10 @@
 % Please edit documentation in R/gramschmidt.R
 \name{gramschmidt}
 \alias{gramschmidt}
-\title{QR Decomposition}
+\title{QR Decomposition via gram schmidt method}
 \usage{
 gramschmidt(x)
 }
 \description{
-QR Decomposition
+This is an R function from \url{https://rpubs.com/aaronsc32/qr-decomposition-gram-schmidt}
 }

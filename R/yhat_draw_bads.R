@@ -1,8 +1,8 @@
-#' @title Draw of y when accept tree movement for rotation version
+#' @title Draw of y when accept tree movement for bads version
 #' @return Draws of yhat and ypred
 #' @export
 
-yhat.draw.rotation=function(btree_obj,x.test,Rj,tau,sigma2,rotate){
+yhat.draw.bads=function(btree_obj,x.test,Rj,tau,sigma2,rotate){
   t_data=btree_obj$t_data
 
   t_R<-lapply(t_data,function(x) Rj[x])

@@ -1,6 +1,9 @@
 #' @title Rotation BART for classification
 #' @param rotate 'rr'='random rotation'','rraug'='random rotation+augmentation','srp'='sparse random projection'
 #' @param srpk the number of cols of sparse projection matrix
+#' @param Others See ?BARTr
+#' @return See ?BARTr
+#' @importFrom BART rtnorm
 #' @export
 
 
@@ -8,14 +11,23 @@ RotpBART=function(X,y,x.test,cutoff=0.5,
                   k=2.0, binaryOffset=NULL,
                   power=2.0, base=.95,w=rep(1,length(y)),
                   ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,p_modify=c(2.5, 2.5, 4)/9,
-                  save_trees=F,rotate = 'rr',srpk=2*ncol(X)){
+                  save_trees=F,rule='bart',p_split='CGM',rotate = 'rr',srpk=2*ncol(X)){
 
   n=nrow(X)
   p=ncol(X)
   nt=nrow(x.test)
 
-  #center
+  if(is.factor(y)){
+    y = as.numeric(y)
+    y = (y-min(y))/(max(y)-min(y))
+  }
+
   fmean=mean(y)
+
+  #whcih y = 1; y=0
+  y1.idx = which(y==1)
+  y0.idx = which(y==0)
+
 
   tau = 3/(k*sqrt(ntree))
   if(length(binaryOffset)==0){binaryOffset=qnorm(fmean)}
@@ -76,61 +88,32 @@ RotpBART=function(X,y,x.test,cutoff=0.5,
 
     bm.f = colSums(yhat.train.j)
     y.train = c()
-    for(ni in 1:n){
-      if(y[ni]==1){
-        y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
-      }else{
-        y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
-      }
-    }
+    y.train[y1.idx] = rtnorm(length(y1.idx),bm.f[y1.idx],1,-binaryOffset)
+    y.train[y0.idx] = -rtnorm(length(y0.idx),-bm.f[y0.idx],1,binaryOffset)
+    # for(ni in 1:n){
+    #   if(y[ni]==1){
+    #     y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
+    #   }else{
+    #     y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
+    #   }
+    # }
 
     #propose modification to each tree
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
+      sig2 = 1
 
-      # propose a modification
-      move=which(rmultinom(1,1,p_modify)==1)
+      BART_draw = BARTr_train(X[,,j],Rj,treelist[[j]],p_modify,Tmin,
+                              rule,sig2,tau,base,power,p_split,r)
 
-      # when we have no split node, only grow tree
-      if(length(treelist[[j]]$s_pos)<1){move=1}
-      tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
-      if(move==1){
-        #grow
-        grown_tree=grow_tree(treelist[[j]],X[,,j],Rj,Tmin)
-        new_treej=grown_tree$btree_obj
-        #calculate acceptance probablity
-        lik_ratio = exp(log_lik(grown_tree$t_data_new,Rj,Tmin,1,tau)
-                        - log_lik(grown_tree$t_data_old,Rj,Tmin,1,tau))
-        trans_ratio=p_modify[2]/p_modify[1]*length(treelist[[j]]$t_pos)/w2(new_treej)
-        #use new p_split
-        #prior_ratio = (1-r^(-grown_tree$d-1))^2*r^(-grown_tree$d)/(1-r^(-grown_tree$d))
-        prior_ratio=base*(1-base/(2+grown_tree$d)^power)^2/((1+grown_tree$d)^power-base)
-        alpha=lik_ratio*trans_ratio*prior_ratio
-        #print(sprintf('lik_ratio %.3f,trans_ratio %.3f,prior.ratio %.3f,alpha %.3f',lik_ratio,trans_ratio,prior_ratio,alpha))
-        #print(sprintf('loglik_new %.3f, old %.3f',log_lik(grown_tree$t_data_new,X,Rj,Tmin,1,V),log_lik(grown_tree$t_data_old,X,Rj,Tmin,1,V)))
-      }else if(move==2){
-        #prune
-        pruned_tree=prune_tree(treelist[[j]])
-        new_treej=pruned_tree$btree_obj
 
-        lik_ratio = exp(log_lik(pruned_tree$t_data_new,Rj,Tmin,1,tau)
-                        - log_lik(pruned_tree$t_data_old,Rj,Tmin,1,tau))
-
-        trans_ratio=p_modify[1]/p_modify[2]*w2(new_treej)/(length(new_treej$t_pos))
-        prior_ratio=((1+pruned_tree$d)^power-base)/(base*(1-base/(2+pruned_tree$d)^power)^2)
-        #prior_ratio = (1-r^(-pruned_tree$d))/((1-r^(-pruned_tree$d-1))^2*r^(-pruned_tree$d))
-        alpha=lik_ratio*trans_ratio*prior_ratio
-
-      }else{
-        # change(simple)
-        changed_tree=change_tree(treelist[[j]],X[,,j],Rj,Tmin)
-        new_treej = changed_tree$btree_obj
-        lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
-                        - log_lik(changed_tree$t_data_old,Rj,Tmin,1,tau))
-        alpha = lik_ratio
-      }
+      alpha = BART_draw$alpha
+      new_treej = BART_draw$new_treej
+      move = BART_draw$move
 
       A=runif(1)
+
+      tree_proposal_total[j,move]=tree_proposal_total[j,move]+1
 
       if(is.nan(alpha)){
         alpha=0
@@ -146,30 +129,32 @@ RotpBART=function(X,y,x.test,cutoff=0.5,
         # we accept the new tree
         #accept=accept+1
         tree_proposal_accept[j,move]=tree_proposal_accept[j,move]+1
-        treelist[[j]]=new_treej
+
         #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
         #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
         if(i<=nskip){
-          hat=yhat.draw(new_treej,x.test,Rj,tau,1,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(new_treej,Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(new_treej,x.test,Rj,tau,1)
+          hat=yhat.draw(new_treej,x.test[,,j],Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
+          new_treej$t_test_data = hat$t_idx
         }
+
+        treelist[[j]]=new_treej
 
 
       }else{
         if(i<=nskip){
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
+          hat=yhat.draw2(treelist[[j]],x.test[,,j],Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }
       }
-
 
 
     }

@@ -2,14 +2,25 @@
 % Please edit documentation in R/BARTr_train.R
 \name{BARTr_train}
 \alias{BARTr_train}
-\title{BART model train workhourse}
+\title{BART model training workhourse}
 \usage{
 BARTr_train(X, Rj, treej, p_modify, Tmin, rule, sigma2, tau, base, power,
   p_split, r)
 }
 \arguments{
-\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
+\item{X, p_modify, Tmin, rule, base, power, p_split, r}{as in ?BARTr}
+
+\item{Rj}{response for tree j}
+
+\item{treej}{jth tree object}
+
+\item{sigma2}{variance of random error}
+
+\item{tau}{normal prior variance of a leaf node in a tree}
+}
+\value{
+alpha: acceptance ratio; move: 1=grow, 2=prune, 3=change; new_treej: modified tree object.
 }
 \description{
-BART model train workhourse
+This function proposes a move to a tree object and modifies the tree accrodingly.
 }

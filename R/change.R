@@ -1,4 +1,5 @@
 #' @title Change proposal
+#' @return changed tree, old leaf mode data index, new leaf node data index
 #' @export
 
 change_tree=function(btree_obj,X,Tmin,rule){

@@ -1,4 +1,4 @@
-#' @title Find terminal nodes of a tree
+#' @title Find which leaf node a test sample belongs to
 #' @export
 #'
 

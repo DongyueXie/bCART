@@ -4,7 +4,7 @@
 \alias{yhat.draw2}
 \title{Draw of y when reject tree movement}
 \usage{
-yhat.draw2(btree_obj, x.test, Rj, tau, sigma2, cl)
+yhat.draw2(btree_obj, x.test, Rj, tau, sigma2)
 }
 \value{
 Draws of yhat and ypred

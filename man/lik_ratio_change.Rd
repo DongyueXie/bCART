@@ -6,6 +6,11 @@
 \usage{
 lik_ratio_change(old_t_data, new_t_data, Rj, Tmin, sigma2, tau)
 }
+\arguments{
+\item{old_t_data}{old tree two leaf data index}
+
+\item{new_t_data}{new tree two leaf data index}
+}
 \description{
 Evaluate liklihood ratio of new tree and old tree for CHANGE
 }

@@ -1,4 +1,5 @@
-#' @title QR Decomposition
+#' @title QR Decomposition via gram schmidt method
+#' @description This is an R function from \url{https://rpubs.com/aaronsc32/qr-decomposition-gram-schmidt}
 #' @export
 
 gramschmidt <- function(x) {

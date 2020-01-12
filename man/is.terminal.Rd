@@ -2,10 +2,10 @@
 % Please edit documentation in R/is_terminal.R
 \name{is.terminal}
 \alias{is.terminal}
-\title{Check if a node is terminal}
+\title{Check if a node is a leaf node}
 \usage{
 is.terminal(kid_pos, t_pos)
 }
 \description{
-Check if a node is terminal
+Check if a node is a leaf node
 }

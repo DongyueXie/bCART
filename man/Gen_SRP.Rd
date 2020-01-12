@@ -2,7 +2,7 @@
 % Please edit documentation in R/Gen_SRP.R
 \name{Gen_SRP}
 \alias{Gen_SRP}
-\title{Generate sparse random orojection matrix}
+\title{Generate an array of sparse random orojection matrices}
 \usage{
 Gen_SRP(p, k, nr, lb = 1/3)
 }
@@ -14,5 +14,5 @@ Gen_SRP(p, k, nr, lb = 1/3)
 \item{lb}{prop of 0's in matrix}
 }
 \description{
-Generate sparse random orojection matrix
+Generate an array of sparse random orojection matrices
 }

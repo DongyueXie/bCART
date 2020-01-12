@@ -1,4 +1,4 @@
-#'@title cross-validated bart
+#'@title cross-validated pbart
 #'@return predicted label and test AUC: ypred,Test_AUC,best_params
 #'@export
 

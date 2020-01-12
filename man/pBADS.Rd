@@ -2,15 +2,57 @@
 % Please edit documentation in R/pBADS.R
 \name{pBADS}
 \alias{pBADS}
-\title{Classification BART}
+\title{Fit a bayesian additive decision stump model for classification}
 \usage{
 pBADS(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
   ntree = 50, ndpost = 700, nskip = 300, Tmin = 2,
-  printevery = 100, save_trees = F, rule = "bart", pre_train = T)
+  printevery = 100, save_trees = F, rule = "bart", pre_train = T,
+  n_pre_train = 100)
 }
 \arguments{
-\item{rule}{grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points}
+\item{X}{samples by features matrix}
+
+\item{y}{response}
+
+\item{x.test}{test samples by feature matrix}
+
+\item{cutoff}{label = 1 if p>cutoff; else label = 0.}
+
+\item{k}{For binary y, k is the number of prior standard deviations f(x) is away from +/-3. The bigger k is, the more conservative the fitting will be.}
+
+\item{binaryOffset}{The model is P(Y=1 | x) = F(f(x) + binaryOffset).}
+
+\item{ntree}{number of decison stumps}
+
+\item{nskip, ndpost}{number of burn-in and posterior draws}
+
+\item{Tmin}{minimum number of samples in a leaf node allowed}
+
+\item{printevery}{print progress for every 'printevery' iterations}
+
+\item{save_trees}{whether save all the trees from each iteration as a list}
+
+\item{rule}{The splitting rule of a node. Choices are: 1. "grp": Gaussian random projection, randomly draw a length p vector from standard normal as the linear combination coefficients of p variables; 2. sgrp: sparse Gaussian random projection, which generates sparse linear combination coefficients; 3. bart: originla bart splits, which are axis-aligned splits; 4. hyperplane: randomly connect two points from the node as the partiton of node space.}
+
+\item{pre_train}{whether pre-train the model using 'bart' rule before switching to another splitting rule.}
+
+\item{n_pre_train}{number of iterations of pre-train}
+}
+\value{
+BADS returns a list of the following elements.
+\item{yhat.train}{A matrix with ndpost rows and nrow(X) columns.}
+\item{yhat.test}{A matrix with ndpost rows and nrow(x.test) columns.}
+\item{yhat.train.mean}{Posterior mean of MCMC draws of traning data fits}
+\item{yhat.test.mean}{Posterior mean of MCMC draws of testing data fits}
+\item{sigma}{draws of random error vairaince, length = nskip+ndpost}
+\item{tree_history}{If save_trees = TRUE, then a list of all trees}
 }
 \description{
-Classification BART
+Bayesian additive decision stump(BADS) is a Bayesian sum of two-leaf-node trees model.
+}
+\references{
+Chipman, H., George, E., and McCulloch R. (2010) Bayesian Additive Regression Trees. The Annals of Applied Statistics, 4,1, 266-298 <doi:10.1214/09-AOAS285>.
+}
+\author{
+Dongyue Xie: \email{dongyxie@gmail.com}
 }

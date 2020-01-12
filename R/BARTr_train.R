@@ -1,7 +1,12 @@
-#' @title BART model train workhourse
-#' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
+#' @title BART model training workhourse
+#' @description This function proposes a move to a tree object and modifies the tree accrodingly.
+#' @param X,p_modify,Tmin,rule,base,power,p_split,r as in ?BARTr
+#' @param Rj response for tree j
+#' @param treej jth tree object
+#' @param sigma2 variance of random error
+#' @param tau normal prior variance of a leaf node in a tree
+#' @return  alpha: acceptance ratio; move: 1=grow, 2=prune, 3=change; new_treej: modified tree object.
 #' @export
-#'
 
 BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_split,r){
 

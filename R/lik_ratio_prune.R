@@ -1,4 +1,6 @@
 #'@title Evaluate liklihood ratio of new tree and old tree for PRUNE
+#'@param old_t_data a list of old tree leaf data index
+#'@param new_t_data a list of new tree leaf data index
 #'@export
 
 lik_ratio_prune = function(old_t_data,new_t_data,Rj,Tmin,sigma2,tau){

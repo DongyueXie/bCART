@@ -1,4 +1,4 @@
-#' @title Generate sparse random orojection matrix
+#' @title Generate an array of sparse random orojection matrices
 #' @param p,k matrix dimension p*k
 #' @param nr number of matrices
 #' @param lb prop of 0's in matrix

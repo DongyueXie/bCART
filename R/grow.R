@@ -1,4 +1,5 @@
 #' @title Grow tree proposal
+#' @return growed tree, old tree depth, old tree leaf data index, new tree leaf data index.
 #' @export
 
 

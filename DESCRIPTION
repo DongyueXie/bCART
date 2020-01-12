@@ -1,19 +1,12 @@
 Package: bCART
 Type: Package
-Title: Explore variants of Bayesian tree. 
-Version: 0.1.1
+Title: Explore variants of Bayesian trees. 
+Version: 1.0.0
 Author: Dongyue Xie
 Maintainer: Dongyue Xie <dongyxie@gmail.com>
-Description: A collection of codes for bCART and BART.
+Description: A collection of R code for bCART and BART.
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
 Depends:
-    BART,
-    rpart,
-    glmnet,
-    SSLASSO,
-    mvtnorm,
-    MASS,
-    pROC
 RoxygenNote: 6.1.1

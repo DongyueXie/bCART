@@ -1,13 +1,19 @@
 #'@title Evaluate liklihood ratio of new tree and old tree for CHANGE
+#'@param old_t_data old tree two leaf data index
+#'@param new_t_data new tree two leaf data index
 #'@export
 
 lik_ratio_change = function(old_t_data,new_t_data,Rj,Tmin,sigma2,tau){
   tau2 = tau^2
 
   R1New = lapply(new_t_data, function(x) Rj[x])
+  #R2New: responses in the right new leaf
   R2New = unlist(R1New[2])
+  #n2New: number of samples in the right new leaf
   n2New = length(R2New)
+  #R1New: responses in the left new leaf
   R1New = unlist(R1New[1])
+  #n1New: number of samples in the left new leaf
   n1New = length(R1New)
 
   if(n1New<Tmin | n2New<Tmin){

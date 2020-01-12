@@ -6,6 +6,11 @@
 \usage{
 lik_ratio_prune(old_t_data, new_t_data, Rj, Tmin, sigma2, tau)
 }
+\arguments{
+\item{old_t_data}{a list of old tree leaf data index}
+
+\item{new_t_data}{a list of new tree leaf data index}
+}
 \description{
 Evaluate liklihood ratio of new tree and old tree for PRUNE
 }

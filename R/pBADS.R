@@ -1,18 +1,50 @@
-#' @title Classification BART
-#' @param rule grp: Gaussian random projection; sgrp: sparse Gaussian random projection; bart: originla bart; hyperplane: connect two points
+#' @title Fit a bayesian additive decision stump model for classification
+#' @description Bayesian additive decision stump(BADS) is a Bayesian sum of two-leaf-node trees model.
+#' @param X samples by features matrix
+#' @param y response
+#' @param x.test test samples by feature matrix
+#' @param k For binary y, k is the number of prior standard deviations f(x) is away from +/-3. The bigger k is, the more conservative the fitting will be.
+#' @param cutoff label = 1 if p>cutoff; else label = 0.
+#' @param binaryOffset The model is P(Y=1 | x) = F(f(x) + binaryOffset).
+#' @param ntree number of decison stumps
+#' @param nskip,ndpost number of burn-in and posterior draws
+#' @param Tmin minimum number of samples in a leaf node allowed
+#' @param printevery print progress for every 'printevery' iterations
+#' @param save_trees whether save all the trees from each iteration as a list
+#' @param rule The splitting rule of a node. Choices are: 1. "grp": Gaussian random projection, randomly draw a length p vector from standard normal as the linear combination coefficients of p variables; 2. sgrp: sparse Gaussian random projection, which generates sparse linear combination coefficients; 3. bart: originla bart splits, which are axis-aligned splits; 4. hyperplane: randomly connect two points from the node as the partiton of node space.
+#' @param pre_train whether pre-train the model using 'bart' rule before switching to another splitting rule.
+#' @param n_pre_train number of iterations of pre-train
+#' @return BADS returns a list of the following elements.
+#' \item{yhat.train}{A matrix with ndpost rows and nrow(X) columns.}
+#' \item{yhat.test}{A matrix with ndpost rows and nrow(x.test) columns.}
+#' \item{yhat.train.mean}{Posterior mean of MCMC draws of traning data fits}
+#' \item{yhat.test.mean}{Posterior mean of MCMC draws of testing data fits}
+#' \item{sigma}{draws of random error vairaince, length = nskip+ndpost}
+#' \item{tree_history}{If save_trees = TRUE, then a list of all trees}
+#' @author Dongyue Xie: \email{dongyxie@gmail.com}
+#' @references Chipman, H., George, E., and McCulloch R. (2010) Bayesian Additive Regression Trees. The Annals of Applied Statistics, 4,1, 266-298 <doi:10.1214/09-AOAS285>.
 #' @export
 
 pBADS=function(X,y,x.test,cutoff=0.5,
                 k=2.0, binaryOffset=NULL,
                 ntree=50,ndpost=700,nskip=300,Tmin=2,printevery=100,
-                save_trees=F,rule='bart',pre_train=T){
+                save_trees=F,rule='bart',pre_train=T,n_pre_train=100){
 
   n=nrow(X)
   p=ncol(X)
   nt=nrow(x.test)
 
-  #center
+  if(is.factor(y)){
+    y = as.numeric(y)
+    y = (y-min(y))/(max(y)-min(y))
+  }
+
   fmean=mean(y)
+
+  #whcih y = 1; y=0
+  y1.idx = which(y==1)
+  y0.idx = which(y==0)
+
   #priors: nu,lambda,tau
   tau = 3/(k*sqrt(ntree))
   if(length(binaryOffset)==0){binaryOffset=qnorm(fmean)}
@@ -22,7 +54,7 @@ pBADS=function(X,y,x.test,cutoff=0.5,
   #give each tree a list speicifying the parameters
   treelist=lapply(treelist, function(x){
     x=list(s_pos=NULL,s_dir=NULL,s_rule=NULL,s_data=NULL,s_depth=NULL,s_obs=NULL,
-           t_pos=1,t_data=list(1:n),t_depth=0)
+           t_pos=1,t_data=list(1:n),t_depth=0,t_test_data=NULL)
   })
 
   #statistics to save
@@ -41,21 +73,13 @@ pBADS=function(X,y,x.test,cutoff=0.5,
 
   bm.f = colSums(yhat.train.j)
   y.train = c()
-  for(ni in 1:n){
-    if(y[ni]==1){
-      y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
-    }else{
-      y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
-    }
-  }
+  y.train[y1.idx] = rtnorm(length(y1.idx),bm.f[y1.idx],1,-binaryOffset)
+  y.train[y0.idx] = -rtnorm(length(y0.idx),-bm.f[y0.idx],1,binaryOffset)
 
   for(j in 1:ntree){
     Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
-    grown_tree=grow_tree(treelist[[j]],X,Rj,Tmin,rule)
-    new_treej=grown_tree$btree_obj
-    treelist[[j]]=new_treej
-    hat=yhat.draw(new_treej,x.test,Rj,tau,1,draw.test=F)
-    yhat.train.j[j,] = hat$yhat
+    treelist[[j]]=grow_tree(treelist[[j]],X,Tmin,rule)$btree_obj
+    yhat.train.j[j,] = yhat.draw.train(treelist[[j]],Rj,tau,1)
   }
 
   #####run bart for 100 iters then switch to 'rule'
@@ -67,28 +91,22 @@ pBADS=function(X,y,x.test,cutoff=0.5,
     if(save_trees){tree_history[[i]]=treelist}
 
     if(pre_train){
-      if(i<=100){rule = 'bart'}else{rule = split_rule}
+      if(i<=n_pre_train){rule = 'bart'}else{rule = split_rule}
     }
 
     bm.f = colSums(yhat.train.j)
     y.train = c()
-    for(ni in 1:n){
-      if(y[ni]==1){
-        y.train[ni] = rtnorm(bm.f[ni],-binaryOffset,1)
-      }else{
-        y.train[ni] = -rtnorm(-bm.f[ni],binaryOffset,1)
-      }
-    }
+    y.train[y1.idx] = rtnorm(length(y1.idx),bm.f[y1.idx],1,-binaryOffset)
+    y.train[y0.idx] = -rtnorm(length(y0.idx),-bm.f[y0.idx],1,binaryOffset)
     #propose modification to each tree
     for (j in 1:ntree) {
       Rj=y.train-colSums(yhat.train.j[-j,,drop=F])
+      sig2=1
 
-      changed_tree=change_tree(treelist[[j]],X,Rj,Tmin,rule)
+      changed_tree=change_tree(treelist[[j]],X,Tmin,rule)
       new_treej = changed_tree$btree_obj
-      lik_ratio = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
+      alpha = exp(log_lik(changed_tree$t_data_new,Rj,Tmin,1,tau)
                         - log_lik(changed_tree$t_data_old,Rj,Tmin,1,tau))
-      alpha = lik_ratio
-
 
       A=runif(1)
 
@@ -96,26 +114,29 @@ pBADS=function(X,y,x.test,cutoff=0.5,
         alpha=0
       }
 
+      if(is.nan(alpha)){
+        alpha=0
+      }
+
       if(A<alpha){
-        treelist[[j]]=new_treej
-        #hat=yhat.draw(new_treej,x.test,Rj,tau,sigma_draw[i]^2)
-        #hat=yhat.draw.linear(new_treej,X,x.test,Rj)
         if(i<=nskip){
-          hat=yhat.draw(new_treej,x.test,Rj,tau,1,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(new_treej,Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(new_treej,x.test,Rj,tau,1)
+          hat=yhat.draw(new_treej,x.test,Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
+          new_treej$t_test_data = hat$t_idx
         }
 
+        treelist[[j]]=new_treej
 
       }else{
         if(i<=nskip){
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1,draw.test=F)
-          yhat.train.j[j,] = hat$yhat
+          hat=yhat.draw.train(treelist[[j]],Rj,tau,sig2)
+          yhat.train.j[j,] = hat
         }else{
-          hat=yhat.draw(treelist[[j]],x.test,Rj,tau,1)
+          hat=yhat.draw2(treelist[[j]],x.test,Rj,tau,sig2)
           yhat.train.j[j,] = hat$yhat
           yhat.test.j[j,] = hat$ypred
         }
@@ -135,8 +156,6 @@ pBADS=function(X,y,x.test,cutoff=0.5,
 
   }
 
-  tree_leaf_count=as.numeric(unlist(lapply(treelist,function(x){length(x$t_data)})))
-
   phat.train = pnorm(yhat.train+binaryOffset)
   phat.test = pnorm(yhat.test+binaryOffset)
 
@@ -145,6 +164,8 @@ pBADS=function(X,y,x.test,cutoff=0.5,
 
   yhat = 1*((phat.train.mean)>=cutoff)
   ypred = 1*((phat.test.mean)>=cutoff)
+
+  tree_leaf_count=as.numeric(unlist(lapply(treelist,function(x){length(x$t_data)})))
 
   return(list(yhat=yhat,ypred=ypred,
               yhat.train=yhat.train,yhat.test=yhat.test,

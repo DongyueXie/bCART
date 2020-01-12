@@ -2,10 +2,18 @@
 % Please edit documentation in R/AUC.R
 \name{AUC}
 \alias{AUC}
-\title{AUC}
+\title{Calculate AUC of binary classification}
 \usage{
 AUC(label, pred)
 }
-\description{
+\arguments{
+\item{label}{true labels}
+
+\item{pred}{predicted lables}
+}
+\value{
 AUC
+}
+\description{
+Calculate AUC of binary classification
 }
