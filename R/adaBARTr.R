@@ -1,4 +1,5 @@
 #'@title Fit an adaptive bayesian additive regression tree(adaBART) model for classification
+#'@param all see ?pBARTr
 #'@export
 
 
@@ -156,7 +157,7 @@ adaBARTr=function(X,y,x.test,cutoff=0.5,
 
   return(list(yhat=yhat,ypred=ypred,
               yhat.train=yhat.train,yhat.test=yhat.test,
-              classifier_weight = wgt,
+              sample_weight = wgt,
               classifier_err = err.i,
               tree_history=tree_history,
               tree_proposal_total=tree_proposal_total,
