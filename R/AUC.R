@@ -3,6 +3,7 @@
 #' @param pred predicted lables
 #' @return AUC
 #' @importFrom pROC roc
+#' @importFrom pROC auc
 #' @export
 
 AUC=function(label,pred){

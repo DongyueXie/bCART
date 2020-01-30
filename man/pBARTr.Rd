@@ -13,7 +13,7 @@ pBARTr(X, y, x.test, cutoff = 0.5, k = 2, binaryOffset = NULL,
 \arguments{
 \item{X}{training samples by features matrix}
 
-\item{y}{response}
+\item{y}{response, factor with level 0,1}
 
 \item{x.test}{testing samples by feature matrix}
 

@@ -1,6 +1,6 @@
 #' @title Fit a bayesian additive regression tree(BART) model for classification
 #' @param X training samples by features matrix
-#' @param y response
+#' @param y response, factor with level 0,1
 #' @param x.test testing samples by feature matrix
 #' @param cutoff label = 1 if p>cutoff; else label = 0.
 #' @param k,power,base see ?BART::pbart
@@ -28,6 +28,7 @@
 #' \item{tree_leaf_count}{Number of leaf nodes in each tree}
 #' @author Dongyue Xie: \email{dongyxie@gmail.com}
 #' @references Chipman, H., George, E., and McCulloch R. (2010) Bayesian Additive Regression Trees. The Annals of Applied Statistics, 4,1, 266-298 <doi:10.1214/09-AOAS285>.
+#' @importFrom BART rtnorm
 #' @export
 
 
