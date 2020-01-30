@@ -17,9 +17,9 @@ RotpBART=function(X,y,x.test,cutoff=0.5,
   p=ncol(X)
   nt=nrow(x.test)
 
+  as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
   if(is.factor(y)){
-    y = as.numeric(y)
-    y = (y-min(y))/(max(y)-min(y))
+    y = as.numeric.factor(y)
   }
 
   fmean=mean(y)
