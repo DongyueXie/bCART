@@ -135,7 +135,7 @@ adaBARTr=function(X,y,x.test,cutoff=0.5,
       yhat.test[i-nskip,]=1*(pnorm(colSums(yhat.test.j)+binaryOffset)>=cutoff)
       #update weights
       err.i[i-nskip] = sum(wgt*(yhat.train[i-nskip,]!=y))/sum(wgt)
-      alpha.i[i-nskip] = log((1-err.i[i-nskip])/err.i[i-nskip])
+      alpha.i[i-nskip] = log((1-err.i[i-nskip]+1e-8)/(err.i[i-nskip]+1e-8))
       wgt = wgt * exp(alpha.i[i-nskip]*(yhat.train[i-nskip,]!=y))
       wgt = wgt/sum(wgt)*n
     }
