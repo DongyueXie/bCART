@@ -3,8 +3,12 @@
 #' @export
 
 new_split=function(X_sub,sub_data,dir_new,rule_new){
-  proj=X_sub[,which(dir_new==1),drop=F]
-
+  if(sum(dir_new)==1){
+    proj=X_sub[,which(dir_new==1),drop=F]
+  }else{
+    proj=X_sub%*%dir_new
+  }
+  #print(dir_new)
   #print(proj)
   #print(rule_new)
 

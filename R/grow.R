@@ -19,12 +19,14 @@ grow_tree=function(btree_obj,X,Tmin,rule){
   depth_new=btree_obj$t_depth[s_new]
   # split the data
   sub_data<-btree_obj$t_data[[s_new]]
-  X_sub=X[sub_data,]
+  X_sub=X[sub_data,,drop=FALSE]
   after_select<-select_rule(X_sub,Tmin,rule)
+
   dir_new<-after_select$dir_new
   #proj=after_select$proj
   rule_new<-after_select$rule_new
   after_split<-new_split(X_sub,sub_data,dir_new,rule_new)
+
   # record old tree terminal data index
   t_data_old = btree_obj$t_data[s_new]
   # remove this new split node from the terminal node record

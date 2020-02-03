@@ -73,6 +73,8 @@ BARTr_train = function(X,Rj,treej,p_modify,Tmin,rule,sigma2,tau,base,power,p_spl
     alpha = lik_ratio_change(changed_tree$t_data_old,changed_tree$t_data_new,Rj,Tmin,sigma2,tau)
   }
 
+
+
   return(list(alpha=alpha,move=move,new_treej=new_treej))
 
 }
