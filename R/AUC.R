@@ -7,6 +7,6 @@
 #' @export
 
 AUC=function(label,pred){
-  roc_obj=roc(label,pred)
+  roc_obj=roc(label,pred,quiet=TRUE)
   return(auc(roc_obj))
 }
